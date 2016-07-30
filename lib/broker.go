@@ -2,80 +2,66 @@ package invt
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strconv"
 )
 
 type Quote interface {
 	String() string
 }
 
+type SimpleQuote string
+
 type BrokerHandler struct {
 	Broker Broker
 }
 
-type Broker interface {
-	Start()
-	GetQuote(string, int64) Quote
+type BrokerClient struct {
+	BrokerURL string
 }
 
+type Broker interface {
+	GetQuote(string, int) Quote
+}
+
+func (sq SimpleQuote) String() string {
+	return string(sq)
+}
+
+func NewBrokerClient(brokerURL string) Broker {
+	return BrokerClient{brokerURL}
+}
+
+// TODO
+func (bc BrokerClient) GetQuote(qname string, lb int) Quote {
+	fmt.Println("BrokerClient Getting Quote: " + bc.BrokerURL)
+	vals := url.Values{"qname": {qname}, "lb": {strconv.Itoa(lb)}}
+	resp, err := http.PostForm("http://"+bc.BrokerURL+"/quote", vals)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+
+	qbytes, _ := ioutil.ReadAll(resp.Body)
+	qstring := string(qbytes)
+	return SimpleQuote(qstring)
+}
+
+// TODO
 func (bh *BrokerHandler) quoteHandler(rw http.ResponseWriter, req *http.Request) {
 	qname, lb := parseQuote(req)
 	quote := bh.Broker.GetQuote(qname, lb)
 	fmt.Fprintf(rw, "%s", quote)
 }
 
-// func (bh *BrokerHandler) quoteStreamHandler(rw http.ResponseWriter, req *http.Request) {
-// 	f, cn := checkStreamable(rw)
-// 	if cn == nil {
-// 		fmt.Fprintf(rw, `{"success":0}`)
-// 		return
-// 	}
-//
-// 	setStreamHeaders(rw)
-//
-// 	quote, _ := parseQuote(req)
-// 	ticker := time.NewTicker(time.Second * 1)
-// 	for {
-// 		select {
-// 		case <-cn.CloseNotify():
-// 			fmt.Fprintf(rw, `{"success":0}`)
-// 			return
-// 		case <-ticker.C:
-// 			fmt.Fprintf(rw, "data:%s\n\n", bh.Broker.GetQuote(quote, 0))
-// 			f.Flush()
-// 		}
-// 	}
-// }
-
 func (bh *BrokerHandler) Start() error {
 	http.HandleFunc("/quote", bh.quoteHandler)
-	// http.HandleFunc("/quote_stream", bh.quoteStreamHandler)
-	bh.Broker.Start()
 	return http.ListenAndServe(":1026", nil)
 }
 
-func parseQuote(req *http.Request) (string, int64) {
+// TODO
+func parseQuote(req *http.Request) (string, int) {
 	return "EURUSD", 0
-}
-
-func setStreamHeaders(rw http.ResponseWriter) {
-	rw.Header().Set("Content-Type", "text/event-stream")
-	rw.Header().Set("Cache-Control", "no-cache")
-	rw.Header().Set("Connection", "keep-alive")
-	rw.Header().Set("Access-Control-Allow-Origin", "*")
-}
-
-func checkStreamable(rw http.ResponseWriter) (http.Flusher, http.CloseNotifier) {
-	f, ok := rw.(http.Flusher)
-	if !ok {
-		http.Error(rw, "cannot stream", http.StatusInternalServerError)
-		return nil, nil
-	}
-
-	cn, ok := rw.(http.CloseNotifier)
-	if !ok {
-		http.Error(rw, "cannot stream", http.StatusInternalServerError)
-		return nil, nil
-	}
-	return f, cn
 }

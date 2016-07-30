@@ -15,9 +15,7 @@ func (q DefaultQuote) String() string {
 	return strconv.Itoa(q.i)
 }
 
-func (b DefaultBroker) Start() {}
-
-func (b DefaultBroker) GetQuote(pair string, lookback int64) Quote {
+func (b DefaultBroker) GetQuote(pair string, lookback int) Quote {
 	return DefaultQuote{42}
 }
 
