@@ -20,15 +20,5 @@ func NewTrader(brokerUrl string, strat *Strategy, margin int) *Trader {
 
 func (tr *Trader) Start() {
 	fmt.Println("Trader Start")
-	inter := tr.Strategy.inter
-	tr.Strategy.Start()
-	for {
-		fmt.Println("Trader Waiting...")
-		select {
-		case qreq := <-inter.QuoteRequest:
-			fmt.Println("Trader Received QuoteRequest")
-			q := tr.Broker.GetQuote(qreq)
-			inter.QuoteResponse <- q
-		}
-	}
+	tr.Strategy.Start(tr)
 }

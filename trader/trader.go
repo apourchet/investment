@@ -6,13 +6,11 @@ import (
 	"time"
 )
 
-func mystrat(s *StrategyInterface) {
+func mystrat(tr *Trader) {
 	for {
-		fmt.Println("Sending Quote Request")
-		s.QuoteRequest <- QuoteRequest{"EURUSD", 0}
-		p := <-s.QuoteResponse
-		fmt.Println("QuoteResponse: " + p.String())
-		time.Sleep(time.Second * 2)
+		q := tr.Broker.GetQuote(QuoteRequest{"EURUSD", 0})
+		fmt.Println("QuoteResponse: " + q.String())
+		time.Sleep(time.Second * 5)
 	}
 }
 
@@ -21,4 +19,8 @@ func main() {
 
 	trader := NewTrader(":1026", strat, 10000)
 	trader.Start()
+	for trader.Margin != 0 {
+		fmt.Printf("Margin: %d\n", trader.Margin)
+		time.Sleep(time.Minute)
+	}
 }

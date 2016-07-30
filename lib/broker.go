@@ -24,9 +24,8 @@ func NewBrokerClient(brokerURL string) Broker {
 	return BrokerClient{brokerURL}
 }
 
-// TODO
+// TODO error handling
 func (bc BrokerClient) GetQuote(qr QuoteRequest) Quote {
-	fmt.Println("BrokerClient Getting Quote: " + bc.BrokerURL)
 	vals := url.Values{"qname": {qr.QuoteName}, "lb": {strconv.Itoa(qr.Lookback)}}
 	resp, err := http.PostForm("http://"+bc.BrokerURL+"/quote", vals)
 	if err != nil {
