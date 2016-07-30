@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
-	"strconv"
+	"strings"
 )
 
 type BrokerHandler struct {
@@ -26,8 +25,8 @@ func NewBrokerClient(brokerURL string) Broker {
 
 // TODO error handling
 func (bc BrokerClient) GetQuote(qr QuoteRequest) Quote {
-	vals := url.Values{"qname": {qr.QuoteName}, "lb": {strconv.Itoa(qr.Lookback)}}
-	resp, err := http.PostForm("http://"+bc.BrokerURL+"/quote", vals)
+	qrReader := strings.NewReader(qr.String())
+	resp, err := http.Post("http://"+bc.BrokerURL+"/quote", "text", qrReader)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -40,7 +39,7 @@ func (bc BrokerClient) GetQuote(qr QuoteRequest) Quote {
 
 // TODO
 func (bh *BrokerHandler) quoteHandler(rw http.ResponseWriter, req *http.Request) {
-	qr := parseQuote(req)
+	qr := parseQuoteRequest(req)
 	quote := bh.Broker.GetQuote(qr)
 	fmt.Fprintf(rw, "%s", quote)
 }
@@ -51,6 +50,6 @@ func (bh *BrokerHandler) Start() error {
 }
 
 // TODO
-func parseQuote(req *http.Request) QuoteRequest {
+func parseQuoteRequest(req *http.Request) QuoteRequest {
 	return QuoteRequest{}
 }

@@ -6,11 +6,11 @@ import (
 
 type Trader struct {
 	Broker   Broker
-	Strategy *Strategy
+	Strategy Strategy
 	Margin   int
 }
 
-func NewTrader(brokerUrl string, strat *Strategy, margin int) *Trader {
+func NewTrader(brokerUrl string, strat Strategy, margin int) *Trader {
 	tr := Trader{}
 	tr.Broker = NewBrokerClient(brokerUrl)
 	tr.Strategy = strat

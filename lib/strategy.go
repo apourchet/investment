@@ -4,17 +4,9 @@ import (
 	"fmt"
 )
 
-type Strategy struct {
-	f StratFunction
-}
+type Strategy func(*Trader)
 
-type StratFunction func(*Trader)
-
-func NewStrategy(f StratFunction) *Strategy {
-	return &Strategy{f}
-}
-
-func (s *Strategy) Start(tr *Trader) {
+func (s Strategy) Start(tr *Trader) {
 	fmt.Println("Strategy Start")
-	go s.f(tr)
+	go s(tr)
 }

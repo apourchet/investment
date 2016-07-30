@@ -2,22 +2,22 @@ package main
 
 import (
 	"fmt"
-	. "github.com/apourchet/investment/lib"
 	"time"
+
+	. "github.com/apourchet/investment/lib"
 )
 
 func mystrat(tr *Trader) {
+	broker := tr.Broker
 	for {
-		q := tr.Broker.GetQuote(QuoteRequest{"EURUSD", 0})
+		q := broker.GetQuote(QuoteRequest{"EURUSD", 0, ""})
 		fmt.Println("QuoteResponse: " + q.String())
 		time.Sleep(time.Second * 5)
 	}
 }
 
 func main() {
-	strat := NewStrategy(mystrat)
-
-	trader := NewTrader(":1026", strat, 10000)
+	trader := NewTrader(":1026", mystrat, 10000)
 	trader.Start()
 	for trader.Margin != 0 {
 		fmt.Printf("Margin: %d\n", trader.Margin)
