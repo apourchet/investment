@@ -8,12 +8,6 @@ import (
 	"strconv"
 )
 
-type Quote interface {
-	String() string
-}
-
-type SimpleQuote string
-
 type BrokerHandler struct {
 	Broker Broker
 }
@@ -23,11 +17,7 @@ type BrokerClient struct {
 }
 
 type Broker interface {
-	GetQuote(string, int) Quote
-}
-
-func (sq SimpleQuote) String() string {
-	return string(sq)
+	GetQuote(QuoteRequest) Quote
 }
 
 func NewBrokerClient(brokerURL string) Broker {
@@ -35,9 +25,9 @@ func NewBrokerClient(brokerURL string) Broker {
 }
 
 // TODO
-func (bc BrokerClient) GetQuote(qname string, lb int) Quote {
+func (bc BrokerClient) GetQuote(qr QuoteRequest) Quote {
 	fmt.Println("BrokerClient Getting Quote: " + bc.BrokerURL)
-	vals := url.Values{"qname": {qname}, "lb": {strconv.Itoa(lb)}}
+	vals := url.Values{"qname": {qr.QuoteName}, "lb": {strconv.Itoa(qr.Lookback)}}
 	resp, err := http.PostForm("http://"+bc.BrokerURL+"/quote", vals)
 	if err != nil {
 		fmt.Println(err)
@@ -46,13 +36,13 @@ func (bc BrokerClient) GetQuote(qname string, lb int) Quote {
 
 	qbytes, _ := ioutil.ReadAll(resp.Body)
 	qstring := string(qbytes)
-	return SimpleQuote(qstring)
+	return ParseQuote(qstring)
 }
 
 // TODO
 func (bh *BrokerHandler) quoteHandler(rw http.ResponseWriter, req *http.Request) {
-	qname, lb := parseQuote(req)
-	quote := bh.Broker.GetQuote(qname, lb)
+	qr := parseQuote(req)
+	quote := bh.Broker.GetQuote(qr)
 	fmt.Fprintf(rw, "%s", quote)
 }
 
@@ -62,6 +52,6 @@ func (bh *BrokerHandler) Start() error {
 }
 
 // TODO
-func parseQuote(req *http.Request) (string, int) {
-	return "EURUSD", 0
+func parseQuote(req *http.Request) QuoteRequest {
+	return QuoteRequest{}
 }

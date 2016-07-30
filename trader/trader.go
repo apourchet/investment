@@ -9,9 +9,9 @@ import (
 func mystrat(s *StrategyInterface) {
 	for {
 		fmt.Println("Sending Quote Request")
-		s.QuoteRequest <- "EURUSD"
+		s.QuoteRequest <- QuoteRequest{"EURUSD", 0}
 		p := <-s.QuoteResponse
-		fmt.Println("QuoteResponse: " + p)
+		fmt.Println("QuoteResponse: " + p.String())
 		time.Sleep(time.Second * 2)
 	}
 }

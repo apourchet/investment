@@ -25,10 +25,10 @@ func (tr *Trader) Start() {
 	for {
 		fmt.Println("Trader Waiting...")
 		select {
-		case qname := <-inter.QuoteRequest:
+		case qreq := <-inter.QuoteRequest:
 			fmt.Println("Trader Received QuoteRequest")
-			q := tr.Broker.GetQuote(qname, 0)
-			inter.QuoteResponse <- q.String()
+			q := tr.Broker.GetQuote(qreq)
+			inter.QuoteResponse <- q
 		}
 	}
 }

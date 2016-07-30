@@ -2,21 +2,13 @@ package main
 
 import (
 	. "github.com/apourchet/investment/lib"
-	"strconv"
+	"time"
 )
-
-type DefaultQuote struct {
-	i int
-}
 
 type DefaultBroker struct{}
 
-func (q DefaultQuote) String() string {
-	return strconv.Itoa(q.i)
-}
-
-func (b DefaultBroker) GetQuote(pair string, lookback int) Quote {
-	return DefaultQuote{42}
+func (b DefaultBroker) GetQuote(qr QuoteRequest) Quote {
+	return Quote{42., 43., time.Now().UnixNano(), false, nil}
 }
 
 func main() {
