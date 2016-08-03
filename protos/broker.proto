@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package protos;
+
+service Broker {
+    rpc GetQuote(QuoteID) returns (Quote) {}
+
+    rpc StreamQuotes(QuoteID) returns (stream Quote) {}
+}
+
+message QuoteID {
+    string name = 1;
+}
+
+message Quote {
+    string name = 1;
+    
+    int64 date = 2;
+
+    double bid = 3;
+
+    double ask = 4;
+}
