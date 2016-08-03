@@ -20,6 +20,4 @@ message Quote {
     double bid = 3;
 
     double offer = 4;
-
-    string error = 5;
 }

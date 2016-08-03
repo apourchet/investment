@@ -11,7 +11,9 @@ type DefaultBroker struct {
 }
 
 func (b *DefaultBroker) GetQuote(ctx context.Context, qid *pb.QuoteID) (*pb.Quote, error) {
-	return nil, nil
+	q := &pb.Quote{}
+	q.Name = "EURUSD"
+	return q, nil
 }
 
 func (b *DefaultBroker) StreamQuotes(qid *pb.QuoteID, stream pb.Broker_StreamQuotesServer) error {
