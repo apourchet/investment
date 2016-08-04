@@ -3,7 +3,7 @@ syntax = "proto3";
 package protos;
 
 service Broker {
-    rpc GetInstrumentList(Empty) returns (InstrumentList) {}
+    rpc GetInstrumentList(AuthToken) returns (InstrumentList) {}
 
     rpc GetPrices(InstrumentIDList) returns (QuoteList) {}
 
@@ -11,7 +11,7 @@ service Broker {
 
     rpc StreamQuotes(InstrumentID) returns (stream Quote) {}
 
-    rpc GetAccounts(Empty) returns (AccountList) {}
+    rpc GetAccounts(AuthToken) returns (AccountList) {}
 
     rpc GetOrders(AccountID) returns (OrderList) {}
 

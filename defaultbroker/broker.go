@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	ONLY_QUOTEID = "EURUSD"
+	ONLY_INSTRUMENTID = "EURUSD"
 )
 
 type defaultBroker struct {
@@ -23,17 +23,29 @@ type defaultBroker struct {
 	lastquote   *pb.Quote
 }
 
-func (b *defaultBroker) GetQuote(ctx context.Context, qid *pb.QuoteID) (*pb.Quote, error) {
-	q := &pb.Quote{}
-	q.Name = qid.Name
-	return q, nil
+func (b *defaultBroker) GetInstrumentList(ctx context.Context, token *pb.AuthToken) (ls *pb.InstrumentList, err error) {
+	ins := pb.Instrument{}
+	ins.Name = ONLY_INSTRUMENTID
+	ins.DisplayName = ins.Name
+	ins.Pip = "0.0001"
+	ins.MaxTradeUnits = 10000
+	ls.Value = append(ls.Value, &ins)
+	return ls, nil
 }
 
-func (b *defaultBroker) StreamQuotes(qid *pb.QuoteID, stream pb.Broker_StreamQuotesServer) error {
-	if qid.Name != ONLY_QUOTEID {
-		return fmt.Errorf("We only support EURUSD as currency.")
+func (b *defaultBroker) GetPrices(ctx context.Context, il *pb.InstrumentIDList) (ls *pb.QuoteList, err error) {
+	for _, iid := range il.Value {
+		if iid.Value == ONLY_INSTRUMENTID {
+			ls.Value = append(ls.Value, b.lastquote)
+		}
 	}
+	return ls, err
+}
 
+func (b *defaultBroker) StreamQuotes(iid *pb.InstrumentID, stream pb.Broker_StreamQuotesServer) error {
+	if iid.Value != ONLY_INSTRUMENTID {
+		return fmt.Errorf("Unsupported InstrumentID. Only support " + ONLY_INSTRUMENTID)
+	}
 	cb := make(chan interface{}, 10)
 	rid := b.broadcaster.Register(cb)
 	for qdata := range cb {
@@ -45,6 +57,22 @@ func (b *defaultBroker) StreamQuotes(qid *pb.QuoteID, stream pb.Broker_StreamQuo
 		}
 	}
 	return nil
+}
+
+func (b *defaultBroker) GetAccounts(ctx context.Context, token *pb.AuthToken) (*pb.AccountList, error) {
+	return nil, fmt.Errorf("Not Implemented")
+}
+
+func (b *defaultBroker) GetOrders(ctx context.Context, accid *pb.AccountID) (*pb.OrderList, error) {
+	return nil, fmt.Errorf("Not Implemented")
+}
+
+func (b *defaultBroker) CreateOrder(ctx context.Context, oc *pb.OrderCreation) (*pb.OrderCreationResponse, error) {
+	return nil, fmt.Errorf("Not Implemented")
+}
+
+func (b *defaultBroker) ChangeOrder(ctx context.Context, oc *pb.OrderChange) (*pb.Order, error) {
+	return nil, fmt.Errorf("Not Implemented")
 }
 
 func (b *defaultBroker) simulate(datafile string) {
@@ -66,9 +94,13 @@ func (b *defaultBroker) simulate(datafile string) {
 		q.Bid, err = strconv.ParseFloat(record[2], 64)
 		q.Ask, err = strconv.ParseFloat(record[4], 64)
 
+		// TODO
+		// q.Time = date.ParseDate(record[0])
+
 		b.lastquote = &q
 		b.broadcaster.Emit(q)
-		time.Sleep(time.Millisecond * 10)
+		fmt.Println(q)
+		time.Sleep(time.Millisecond * 1000)
 	}
 }
 

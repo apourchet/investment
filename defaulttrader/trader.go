@@ -13,8 +13,8 @@ func main() {
 	defer conn.Close()
 
 	broker := pb.NewBrokerClient(conn)
-	qid := &pb.QuoteID{"EURUSD"}
-	stream, _ := broker.StreamQuotes(context.Background(), qid)
+	iid := &pb.InstrumentID{"EURUSD"}
+	stream, _ := broker.StreamQuotes(context.Background(), iid)
 
 	for {
 		q, err := stream.Recv()
@@ -22,7 +22,7 @@ func main() {
 			// Done reading
 			return
 		}
-		fmt.Println(q.String())
+		fmt.Println(q)
 	}
 
 	// for {
