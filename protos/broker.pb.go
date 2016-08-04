@@ -9,8 +9,23 @@ It is generated from these files:
 	protos/broker.proto
 
 It has these top-level messages:
-	QuoteID
+	Empty
+	AuthToken
+	InstrumentID
+	InstrumentIDList
+	Instrument
+	InstrumentList
+	AccountID
+	Account
+	AccountList
 	Quote
+	QuoteList
+	OrderID
+	Order
+	OrderList
+	OrderCreation
+	OrderChange
+	OrderCreationResponse
 */
 package protos
 
@@ -34,30 +49,318 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-type QuoteID struct {
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+type OrderType int32
+
+const (
+	OrderType_LIMIT             OrderType = 0
+	OrderType_STOP              OrderType = 1
+	OrderType_MARKET_IF_TOUCHED OrderType = 2
+	OrderType_MARKET            OrderType = 3
+)
+
+var OrderType_name = map[int32]string{
+	0: "LIMIT",
+	1: "STOP",
+	2: "MARKET_IF_TOUCHED",
+	3: "MARKET",
+}
+var OrderType_value = map[string]int32{
+	"LIMIT":             0,
+	"STOP":              1,
+	"MARKET_IF_TOUCHED": 2,
+	"MARKET":            3,
 }
 
-func (m *QuoteID) Reset()                    { *m = QuoteID{} }
-func (m *QuoteID) String() string            { return proto.CompactTextString(m) }
-func (*QuoteID) ProtoMessage()               {}
-func (*QuoteID) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (x OrderType) String() string {
+	return proto.EnumName(OrderType_name, int32(x))
+}
+func (OrderType) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+type Empty struct {
+}
+
+func (m *Empty) Reset()                    { *m = Empty{} }
+func (m *Empty) String() string            { return proto.CompactTextString(m) }
+func (*Empty) ProtoMessage()               {}
+func (*Empty) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+type AuthToken struct {
+	Value string `protobuf:"bytes,1,opt,name=value" json:"value,omitempty"`
+}
+
+func (m *AuthToken) Reset()                    { *m = AuthToken{} }
+func (m *AuthToken) String() string            { return proto.CompactTextString(m) }
+func (*AuthToken) ProtoMessage()               {}
+func (*AuthToken) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+type InstrumentID struct {
+	Value string `protobuf:"bytes,1,opt,name=value" json:"value,omitempty"`
+}
+
+func (m *InstrumentID) Reset()                    { *m = InstrumentID{} }
+func (m *InstrumentID) String() string            { return proto.CompactTextString(m) }
+func (*InstrumentID) ProtoMessage()               {}
+func (*InstrumentID) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+type InstrumentIDList struct {
+	Value []*InstrumentID `protobuf:"bytes,1,rep,name=value" json:"value,omitempty"`
+}
+
+func (m *InstrumentIDList) Reset()                    { *m = InstrumentIDList{} }
+func (m *InstrumentIDList) String() string            { return proto.CompactTextString(m) }
+func (*InstrumentIDList) ProtoMessage()               {}
+func (*InstrumentIDList) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *InstrumentIDList) GetValue() []*InstrumentID {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+type Instrument struct {
+	Name          string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	DisplayName   string `protobuf:"bytes,2,opt,name=display_name,json=displayName" json:"display_name,omitempty"`
+	Pip           string `protobuf:"bytes,3,opt,name=pip" json:"pip,omitempty"`
+	MaxTradeUnits int32  `protobuf:"varint,4,opt,name=max_trade_units,json=maxTradeUnits" json:"max_trade_units,omitempty"`
+}
+
+func (m *Instrument) Reset()                    { *m = Instrument{} }
+func (m *Instrument) String() string            { return proto.CompactTextString(m) }
+func (*Instrument) ProtoMessage()               {}
+func (*Instrument) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+type InstrumentList struct {
+	Value []*Instrument `protobuf:"bytes,1,rep,name=value" json:"value,omitempty"`
+}
+
+func (m *InstrumentList) Reset()                    { *m = InstrumentList{} }
+func (m *InstrumentList) String() string            { return proto.CompactTextString(m) }
+func (*InstrumentList) ProtoMessage()               {}
+func (*InstrumentList) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+func (m *InstrumentList) GetValue() []*Instrument {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+type AccountID struct {
+	Value string `protobuf:"bytes,1,opt,name=value" json:"value,omitempty"`
+}
+
+func (m *AccountID) Reset()                    { *m = AccountID{} }
+func (m *AccountID) String() string            { return proto.CompactTextString(m) }
+func (*AccountID) ProtoMessage()               {}
+func (*AccountID) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+
+type Account struct {
+	Id           string  `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Name         string  `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Currency     string  `protobuf:"bytes,3,opt,name=currency" json:"currency,omitempty"`
+	MarginRate   float64 `protobuf:"fixed64,4,opt,name=margin_rate,json=marginRate" json:"margin_rate,omitempty"`
+	Balance      float64 `protobuf:"fixed64,5,opt,name=balance" json:"balance,omitempty"`
+	UnrealizedPl float64 `protobuf:"fixed64,6,opt,name=unrealized_pl,json=unrealizedPl" json:"unrealized_pl,omitempty"`
+	RealizedPl   float64 `protobuf:"fixed64,7,opt,name=realized_pl,json=realizedPl" json:"realized_pl,omitempty"`
+	MarginUsed   float64 `protobuf:"fixed64,8,opt,name=margin_used,json=marginUsed" json:"margin_used,omitempty"`
+	MarginAvail  float64 `protobuf:"fixed64,9,opt,name=margin_avail,json=marginAvail" json:"margin_avail,omitempty"`
+	OpenTrades   float64 `protobuf:"fixed64,10,opt,name=open_trades,json=openTrades" json:"open_trades,omitempty"`
+	OpenOrders   float64 `protobuf:"fixed64,11,opt,name=open_orders,json=openOrders" json:"open_orders,omitempty"`
+}
+
+func (m *Account) Reset()                    { *m = Account{} }
+func (m *Account) String() string            { return proto.CompactTextString(m) }
+func (*Account) ProtoMessage()               {}
+func (*Account) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
+
+type AccountList struct {
+	Value []*Account `protobuf:"bytes,1,rep,name=value" json:"value,omitempty"`
+}
+
+func (m *AccountList) Reset()                    { *m = AccountList{} }
+func (m *AccountList) String() string            { return proto.CompactTextString(m) }
+func (*AccountList) ProtoMessage()               {}
+func (*AccountList) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
+
+func (m *AccountList) GetValue() []*Account {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
 
 type Quote struct {
-	Name string  `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Date int64   `protobuf:"varint,2,opt,name=date" json:"date,omitempty"`
-	Bid  float64 `protobuf:"fixed64,3,opt,name=bid" json:"bid,omitempty"`
-	Ask  float64 `protobuf:"fixed64,4,opt,name=ask" json:"ask,omitempty"`
+	Name   string  `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Time   string  `protobuf:"bytes,2,opt,name=time" json:"time,omitempty"`
+	Bid    float64 `protobuf:"fixed64,3,opt,name=bid" json:"bid,omitempty"`
+	Ask    float64 `protobuf:"fixed64,4,opt,name=ask" json:"ask,omitempty"`
+	Status string  `protobuf:"bytes,5,opt,name=status" json:"status,omitempty"`
 }
 
 func (m *Quote) Reset()                    { *m = Quote{} }
 func (m *Quote) String() string            { return proto.CompactTextString(m) }
 func (*Quote) ProtoMessage()               {}
-func (*Quote) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (*Quote) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
+
+type QuoteList struct {
+	Value []*Quote `protobuf:"bytes,1,rep,name=value" json:"value,omitempty"`
+}
+
+func (m *QuoteList) Reset()                    { *m = QuoteList{} }
+func (m *QuoteList) String() string            { return proto.CompactTextString(m) }
+func (*QuoteList) ProtoMessage()               {}
+func (*QuoteList) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
+
+func (m *QuoteList) GetValue() []*Quote {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+type OrderID struct {
+	Value string `protobuf:"bytes,1,opt,name=value" json:"value,omitempty"`
+}
+
+func (m *OrderID) Reset()                    { *m = OrderID{} }
+func (m *OrderID) String() string            { return proto.CompactTextString(m) }
+func (*OrderID) ProtoMessage()               {}
+func (*OrderID) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{11} }
+
+type Order struct {
+	Id           string    `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Instrument   string    `protobuf:"bytes,2,opt,name=instrument" json:"instrument,omitempty"`
+	Units        int32     `protobuf:"varint,3,opt,name=units" json:"units,omitempty"`
+	Side         string    `protobuf:"bytes,4,opt,name=side" json:"side,omitempty"`
+	Type         OrderType `protobuf:"varint,5,opt,name=type,enum=protos.OrderType" json:"type,omitempty"`
+	Time         string    `protobuf:"bytes,6,opt,name=time" json:"time,omitempty"`
+	Price        float64   `protobuf:"fixed64,7,opt,name=price" json:"price,omitempty"`
+	TakeProfit   float64   `protobuf:"fixed64,8,opt,name=take_profit,json=takeProfit" json:"take_profit,omitempty"`
+	StopLoss     float64   `protobuf:"fixed64,9,opt,name=stop_loss,json=stopLoss" json:"stop_loss,omitempty"`
+	Expiry       string    `protobuf:"bytes,10,opt,name=expiry" json:"expiry,omitempty"`
+	UpperBound   float64   `protobuf:"fixed64,11,opt,name=upper_bound,json=upperBound" json:"upper_bound,omitempty"`
+	LowerBound   float64   `protobuf:"fixed64,12,opt,name=lower_bound,json=lowerBound" json:"lower_bound,omitempty"`
+	TrailingStop float64   `protobuf:"fixed64,13,opt,name=trailing_stop,json=trailingStop" json:"trailing_stop,omitempty"`
+}
+
+func (m *Order) Reset()                    { *m = Order{} }
+func (m *Order) String() string            { return proto.CompactTextString(m) }
+func (*Order) ProtoMessage()               {}
+func (*Order) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{12} }
+
+type OrderList struct {
+	Value []*Order `protobuf:"bytes,1,rep,name=value" json:"value,omitempty"`
+}
+
+func (m *OrderList) Reset()                    { *m = OrderList{} }
+func (m *OrderList) String() string            { return proto.CompactTextString(m) }
+func (*OrderList) ProtoMessage()               {}
+func (*OrderList) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{13} }
+
+func (m *OrderList) GetValue() []*Order {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+type OrderCreation struct {
+	Instrument   string     `protobuf:"bytes,1,opt,name=instrument" json:"instrument,omitempty"`
+	Units        int32      `protobuf:"varint,2,opt,name=units" json:"units,omitempty"`
+	Side         string     `protobuf:"bytes,3,opt,name=side" json:"side,omitempty"`
+	Type         OrderType  `protobuf:"varint,4,opt,name=type,enum=protos.OrderType" json:"type,omitempty"`
+	Expiry       string     `protobuf:"bytes,5,opt,name=expiry" json:"expiry,omitempty"`
+	Price        float64    `protobuf:"fixed64,6,opt,name=price" json:"price,omitempty"`
+	TakeProfit   float64    `protobuf:"fixed64,7,opt,name=take_profit,json=takeProfit" json:"take_profit,omitempty"`
+	StopLoss     float64    `protobuf:"fixed64,8,opt,name=stop_loss,json=stopLoss" json:"stop_loss,omitempty"`
+	UpperBound   float64    `protobuf:"fixed64,9,opt,name=upper_bound,json=upperBound" json:"upper_bound,omitempty"`
+	LowerBound   float64    `protobuf:"fixed64,10,opt,name=lower_bound,json=lowerBound" json:"lower_bound,omitempty"`
+	TrailingStop float64    `protobuf:"fixed64,11,opt,name=trailing_stop,json=trailingStop" json:"trailing_stop,omitempty"`
+	AccountId    *AccountID `protobuf:"bytes,12,opt,name=account_id,json=accountId" json:"account_id,omitempty"`
+}
+
+func (m *OrderCreation) Reset()                    { *m = OrderCreation{} }
+func (m *OrderCreation) String() string            { return proto.CompactTextString(m) }
+func (*OrderCreation) ProtoMessage()               {}
+func (*OrderCreation) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{14} }
+
+func (m *OrderCreation) GetAccountId() *AccountID {
+	if m != nil {
+		return m.AccountId
+	}
+	return nil
+}
+
+type OrderChange struct {
+	Units        int32      `protobuf:"varint,1,opt,name=units" json:"units,omitempty"`
+	Price        float64    `protobuf:"fixed64,2,opt,name=price" json:"price,omitempty"`
+	Expiry       string     `protobuf:"bytes,3,opt,name=expiry" json:"expiry,omitempty"`
+	TakeProfit   float64    `protobuf:"fixed64,4,opt,name=take_profit,json=takeProfit" json:"take_profit,omitempty"`
+	StopLoss     float64    `protobuf:"fixed64,5,opt,name=stop_loss,json=stopLoss" json:"stop_loss,omitempty"`
+	UpperBound   float64    `protobuf:"fixed64,6,opt,name=upper_bound,json=upperBound" json:"upper_bound,omitempty"`
+	LowerBound   float64    `protobuf:"fixed64,7,opt,name=lower_bound,json=lowerBound" json:"lower_bound,omitempty"`
+	TrailingStop float64    `protobuf:"fixed64,8,opt,name=trailing_stop,json=trailingStop" json:"trailing_stop,omitempty"`
+	AccountId    *AccountID `protobuf:"bytes,9,opt,name=account_id,json=accountId" json:"account_id,omitempty"`
+	OrderId      *OrderID   `protobuf:"bytes,10,opt,name=order_id,json=orderId" json:"order_id,omitempty"`
+}
+
+func (m *OrderChange) Reset()                    { *m = OrderChange{} }
+func (m *OrderChange) String() string            { return proto.CompactTextString(m) }
+func (*OrderChange) ProtoMessage()               {}
+func (*OrderChange) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{15} }
+
+func (m *OrderChange) GetAccountId() *AccountID {
+	if m != nil {
+		return m.AccountId
+	}
+	return nil
+}
+
+func (m *OrderChange) GetOrderId() *OrderID {
+	if m != nil {
+		return m.OrderId
+	}
+	return nil
+}
+
+type OrderCreationResponse struct {
+	Instrument string `protobuf:"bytes,1,opt,name=instrument" json:"instrument,omitempty"`
+	Time       string `protobuf:"bytes,2,opt,name=time" json:"time,omitempty"`
+	Order      *Order `protobuf:"bytes,3,opt,name=order" json:"order,omitempty"`
+}
+
+func (m *OrderCreationResponse) Reset()                    { *m = OrderCreationResponse{} }
+func (m *OrderCreationResponse) String() string            { return proto.CompactTextString(m) }
+func (*OrderCreationResponse) ProtoMessage()               {}
+func (*OrderCreationResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{16} }
+
+func (m *OrderCreationResponse) GetOrder() *Order {
+	if m != nil {
+		return m.Order
+	}
+	return nil
+}
 
 func init() {
-	proto.RegisterType((*QuoteID)(nil), "protos.QuoteID")
+	proto.RegisterType((*Empty)(nil), "protos.Empty")
+	proto.RegisterType((*AuthToken)(nil), "protos.AuthToken")
+	proto.RegisterType((*InstrumentID)(nil), "protos.InstrumentID")
+	proto.RegisterType((*InstrumentIDList)(nil), "protos.InstrumentIDList")
+	proto.RegisterType((*Instrument)(nil), "protos.Instrument")
+	proto.RegisterType((*InstrumentList)(nil), "protos.InstrumentList")
+	proto.RegisterType((*AccountID)(nil), "protos.AccountID")
+	proto.RegisterType((*Account)(nil), "protos.Account")
+	proto.RegisterType((*AccountList)(nil), "protos.AccountList")
 	proto.RegisterType((*Quote)(nil), "protos.Quote")
+	proto.RegisterType((*QuoteList)(nil), "protos.QuoteList")
+	proto.RegisterType((*OrderID)(nil), "protos.OrderID")
+	proto.RegisterType((*Order)(nil), "protos.Order")
+	proto.RegisterType((*OrderList)(nil), "protos.OrderList")
+	proto.RegisterType((*OrderCreation)(nil), "protos.OrderCreation")
+	proto.RegisterType((*OrderChange)(nil), "protos.OrderChange")
+	proto.RegisterType((*OrderCreationResponse)(nil), "protos.OrderCreationResponse")
+	proto.RegisterEnum("protos.OrderType", OrderType_name, OrderType_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -71,8 +374,13 @@ const _ = grpc.SupportPackageIsVersion3
 // Client API for Broker service
 
 type BrokerClient interface {
-	GetQuote(ctx context.Context, in *QuoteID, opts ...grpc.CallOption) (*Quote, error)
-	StreamQuotes(ctx context.Context, in *QuoteID, opts ...grpc.CallOption) (Broker_StreamQuotesClient, error)
+	GetInstrumentList(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*InstrumentList, error)
+	GetPrices(ctx context.Context, in *InstrumentIDList, opts ...grpc.CallOption) (*QuoteList, error)
+	StreamQuotes(ctx context.Context, in *InstrumentID, opts ...grpc.CallOption) (Broker_StreamQuotesClient, error)
+	GetAccounts(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AccountList, error)
+	GetOrders(ctx context.Context, in *AccountID, opts ...grpc.CallOption) (*OrderList, error)
+	CreateOrder(ctx context.Context, in *OrderCreation, opts ...grpc.CallOption) (*OrderCreationResponse, error)
+	ChangeOrder(ctx context.Context, in *OrderChange, opts ...grpc.CallOption) (*Order, error)
 }
 
 type brokerClient struct {
@@ -83,16 +391,25 @@ func NewBrokerClient(cc *grpc.ClientConn) BrokerClient {
 	return &brokerClient{cc}
 }
 
-func (c *brokerClient) GetQuote(ctx context.Context, in *QuoteID, opts ...grpc.CallOption) (*Quote, error) {
-	out := new(Quote)
-	err := grpc.Invoke(ctx, "/protos.Broker/GetQuote", in, out, c.cc, opts...)
+func (c *brokerClient) GetInstrumentList(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*InstrumentList, error) {
+	out := new(InstrumentList)
+	err := grpc.Invoke(ctx, "/protos.Broker/GetInstrumentList", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *brokerClient) StreamQuotes(ctx context.Context, in *QuoteID, opts ...grpc.CallOption) (Broker_StreamQuotesClient, error) {
+func (c *brokerClient) GetPrices(ctx context.Context, in *InstrumentIDList, opts ...grpc.CallOption) (*QuoteList, error) {
+	out := new(QuoteList)
+	err := grpc.Invoke(ctx, "/protos.Broker/GetPrices", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *brokerClient) StreamQuotes(ctx context.Context, in *InstrumentID, opts ...grpc.CallOption) (Broker_StreamQuotesClient, error) {
 	stream, err := grpc.NewClientStream(ctx, &_Broker_serviceDesc.Streams[0], c.cc, "/protos.Broker/StreamQuotes", opts...)
 	if err != nil {
 		return nil, err
@@ -124,37 +441,96 @@ func (x *brokerStreamQuotesClient) Recv() (*Quote, error) {
 	return m, nil
 }
 
+func (c *brokerClient) GetAccounts(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AccountList, error) {
+	out := new(AccountList)
+	err := grpc.Invoke(ctx, "/protos.Broker/GetAccounts", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *brokerClient) GetOrders(ctx context.Context, in *AccountID, opts ...grpc.CallOption) (*OrderList, error) {
+	out := new(OrderList)
+	err := grpc.Invoke(ctx, "/protos.Broker/GetOrders", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *brokerClient) CreateOrder(ctx context.Context, in *OrderCreation, opts ...grpc.CallOption) (*OrderCreationResponse, error) {
+	out := new(OrderCreationResponse)
+	err := grpc.Invoke(ctx, "/protos.Broker/CreateOrder", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *brokerClient) ChangeOrder(ctx context.Context, in *OrderChange, opts ...grpc.CallOption) (*Order, error) {
+	out := new(Order)
+	err := grpc.Invoke(ctx, "/protos.Broker/ChangeOrder", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Broker service
 
 type BrokerServer interface {
-	GetQuote(context.Context, *QuoteID) (*Quote, error)
-	StreamQuotes(*QuoteID, Broker_StreamQuotesServer) error
+	GetInstrumentList(context.Context, *Empty) (*InstrumentList, error)
+	GetPrices(context.Context, *InstrumentIDList) (*QuoteList, error)
+	StreamQuotes(*InstrumentID, Broker_StreamQuotesServer) error
+	GetAccounts(context.Context, *Empty) (*AccountList, error)
+	GetOrders(context.Context, *AccountID) (*OrderList, error)
+	CreateOrder(context.Context, *OrderCreation) (*OrderCreationResponse, error)
+	ChangeOrder(context.Context, *OrderChange) (*Order, error)
 }
 
 func RegisterBrokerServer(s *grpc.Server, srv BrokerServer) {
 	s.RegisterService(&_Broker_serviceDesc, srv)
 }
 
-func _Broker_GetQuote_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QuoteID)
+func _Broker_GetInstrumentList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BrokerServer).GetQuote(ctx, in)
+		return srv.(BrokerServer).GetInstrumentList(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/protos.Broker/GetQuote",
+		FullMethod: "/protos.Broker/GetInstrumentList",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BrokerServer).GetQuote(ctx, req.(*QuoteID))
+		return srv.(BrokerServer).GetInstrumentList(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Broker_GetPrices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InstrumentIDList)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BrokerServer).GetPrices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protos.Broker/GetPrices",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerServer).GetPrices(ctx, req.(*InstrumentIDList))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Broker_StreamQuotes_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(QuoteID)
+	m := new(InstrumentID)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -174,13 +550,105 @@ func (x *brokerStreamQuotesServer) Send(m *Quote) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Broker_GetAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BrokerServer).GetAccounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protos.Broker/GetAccounts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerServer).GetAccounts(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Broker_GetOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccountID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BrokerServer).GetOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protos.Broker/GetOrders",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerServer).GetOrders(ctx, req.(*AccountID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Broker_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OrderCreation)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BrokerServer).CreateOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protos.Broker/CreateOrder",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerServer).CreateOrder(ctx, req.(*OrderCreation))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Broker_ChangeOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OrderChange)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BrokerServer).ChangeOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/protos.Broker/ChangeOrder",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerServer).ChangeOrder(ctx, req.(*OrderChange))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Broker_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "protos.Broker",
 	HandlerType: (*BrokerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetQuote",
-			Handler:    _Broker_GetQuote_Handler,
+			MethodName: "GetInstrumentList",
+			Handler:    _Broker_GetInstrumentList_Handler,
+		},
+		{
+			MethodName: "GetPrices",
+			Handler:    _Broker_GetPrices_Handler,
+		},
+		{
+			MethodName: "GetAccounts",
+			Handler:    _Broker_GetAccounts_Handler,
+		},
+		{
+			MethodName: "GetOrders",
+			Handler:    _Broker_GetOrders_Handler,
+		},
+		{
+			MethodName: "CreateOrder",
+			Handler:    _Broker_CreateOrder_Handler,
+		},
+		{
+			MethodName: "ChangeOrder",
+			Handler:    _Broker_ChangeOrder_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -196,16 +664,69 @@ var _Broker_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("protos/broker.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 171 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x2e, 0x28, 0xca, 0x2f,
-	0xc9, 0x2f, 0xd6, 0x4f, 0x2a, 0xca, 0xcf, 0x4e, 0x2d, 0xd2, 0x03, 0xf3, 0x84, 0xd8, 0x20, 0x82,
-	0x4a, 0xb2, 0x5c, 0xec, 0x81, 0xa5, 0xf9, 0x25, 0xa9, 0x9e, 0x2e, 0x42, 0x42, 0x5c, 0x2c, 0x79,
-	0x89, 0xb9, 0xa9, 0x12, 0x8c, 0x0a, 0x8c, 0x1a, 0x9c, 0x41, 0x60, 0xb6, 0x52, 0x30, 0x17, 0x2b,
-	0x58, 0x1a, 0x9b, 0x24, 0x48, 0x2c, 0x25, 0xb1, 0x24, 0x55, 0x82, 0x09, 0x28, 0xc6, 0x1c, 0x04,
-	0x66, 0x0b, 0x09, 0x70, 0x31, 0x27, 0x65, 0xa6, 0x48, 0x30, 0x03, 0x85, 0x18, 0x83, 0x40, 0x4c,
-	0x90, 0x48, 0x62, 0x71, 0xb6, 0x04, 0x0b, 0x44, 0x04, 0xc8, 0x34, 0xca, 0xe2, 0x62, 0x73, 0x02,
-	0xbb, 0x45, 0x48, 0x87, 0x8b, 0xc3, 0x3d, 0xb5, 0x04, 0x62, 0x03, 0x3f, 0xc4, 0x65, 0xc5, 0x7a,
-	0x50, 0xf7, 0x48, 0xf1, 0xa2, 0x08, 0x28, 0x31, 0x08, 0x19, 0x71, 0xf1, 0x04, 0x97, 0x14, 0xa5,
-	0x26, 0xe6, 0x82, 0x05, 0x8a, 0x09, 0xeb, 0x30, 0x60, 0x4c, 0x82, 0xf8, 0xd3, 0x18, 0x10, 0x00,
-	0x00, 0xff, 0xff, 0xd2, 0x05, 0xfb, 0x9c, 0x05, 0x01, 0x00, 0x00,
+	// 1017 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x84, 0x56, 0xdd, 0x6e, 0xdb, 0x36,
+	0x18, 0x8d, 0x2d, 0xff, 0xe9, 0x53, 0x9c, 0x38, 0x4c, 0x53, 0x08, 0x1e, 0xb6, 0xae, 0xea, 0x36,
+	0x04, 0xbd, 0xe8, 0x82, 0x64, 0xc0, 0x80, 0x62, 0x18, 0x90, 0xa6, 0xd9, 0x66, 0x2c, 0x5d, 0x32,
+	0xc7, 0xb9, 0x16, 0x64, 0x8b, 0x4b, 0x85, 0xc8, 0x92, 0x20, 0x52, 0x5d, 0x3d, 0x60, 0x97, 0x7b,
+	0x90, 0xbd, 0xd1, 0x2e, 0xf6, 0x1e, 0x7b, 0x85, 0x91, 0x1f, 0xa9, 0x3f, 0xdb, 0xb1, 0xef, 0xc8,
+	0xc3, 0x43, 0xf2, 0xe3, 0x39, 0x87, 0xa2, 0xe0, 0x30, 0x49, 0x63, 0x1e, 0xb3, 0xaf, 0xa7, 0x69,
+	0xfc, 0x40, 0xd3, 0x57, 0xd8, 0x23, 0x1d, 0x05, 0x3a, 0x5d, 0x68, 0x5f, 0xce, 0x13, 0xbe, 0x70,
+	0x9e, 0x83, 0x79, 0x9e, 0xf1, 0xf7, 0x13, 0xc1, 0x89, 0xc8, 0x13, 0x68, 0x7f, 0xf0, 0xc2, 0x8c,
+	0xda, 0x8d, 0xcf, 0x1b, 0xc7, 0xe6, 0x58, 0x75, 0x9c, 0x2f, 0x60, 0x77, 0x14, 0x31, 0x9e, 0x66,
+	0x73, 0x1a, 0xf1, 0xd1, 0xdb, 0x47, 0x58, 0xdf, 0xc3, 0xa0, 0xca, 0xba, 0x0a, 0x18, 0x27, 0x2f,
+	0x4b, 0xa6, 0x71, 0x6c, 0x9d, 0x3e, 0x51, 0x45, 0xb0, 0x57, 0x55, 0x62, 0x3e, 0xff, 0x4f, 0x80,
+	0x12, 0x26, 0x04, 0x5a, 0x91, 0x37, 0xcf, 0xb7, 0xc0, 0x36, 0x79, 0x0e, 0xbb, 0x7e, 0xc0, 0x92,
+	0xd0, 0x5b, 0xb8, 0x38, 0xd6, 0xc4, 0x31, 0x4b, 0x63, 0xbf, 0x48, 0xca, 0x00, 0x8c, 0x24, 0x48,
+	0x6c, 0x03, 0x47, 0x64, 0x93, 0x7c, 0x05, 0xfb, 0x73, 0xef, 0xa3, 0xcb, 0x53, 0xcf, 0xa7, 0x6e,
+	0x16, 0x05, 0x9c, 0xd9, 0x2d, 0x31, 0xda, 0x1e, 0xf7, 0x05, 0x3c, 0x91, 0xe8, 0x9d, 0x04, 0x9d,
+	0xd7, 0xb0, 0x57, 0x6e, 0x8f, 0xc5, 0x1f, 0xd7, 0x8b, 0x27, 0xab, 0xc5, 0xe7, 0xa5, 0x4b, 0x0d,
+	0x67, 0xb3, 0x38, 0xdb, 0xa0, 0xce, 0x3f, 0x4d, 0xe8, 0x6a, 0x0e, 0xd9, 0x83, 0x66, 0xe0, 0xeb,
+	0x61, 0xd1, 0x2a, 0xce, 0xda, 0xac, 0x9c, 0x75, 0x08, 0xbd, 0x59, 0x96, 0xa6, 0x34, 0x9a, 0x2d,
+	0xf4, 0x69, 0x8a, 0x3e, 0x79, 0x06, 0xd6, 0xdc, 0x4b, 0xef, 0x83, 0xc8, 0x4d, 0x3d, 0x4e, 0xf1,
+	0x38, 0x8d, 0x31, 0x28, 0x68, 0x2c, 0x10, 0x62, 0x43, 0x77, 0xea, 0x85, 0x5e, 0x34, 0xa3, 0x76,
+	0x1b, 0x07, 0xf3, 0x2e, 0x79, 0x01, 0xfd, 0x2c, 0x4a, 0xa9, 0x17, 0x06, 0x7f, 0x50, 0xdf, 0x4d,
+	0x42, 0xbb, 0x83, 0xe3, 0xbb, 0x25, 0x78, 0x13, 0xca, 0xf5, 0xab, 0x94, 0xae, 0x5a, 0xbf, 0x4e,
+	0xd0, 0x05, 0x64, 0x8c, 0xfa, 0x76, 0xaf, 0x5a, 0xc0, 0x9d, 0x40, 0xa4, 0x53, 0x9a, 0xe0, 0x7d,
+	0xf0, 0x82, 0xd0, 0x36, 0x91, 0xa1, 0x27, 0x9d, 0x4b, 0x48, 0xae, 0x11, 0x27, 0x34, 0x52, 0xc6,
+	0x30, 0x1b, 0xd4, 0x1a, 0x12, 0x42, 0x53, 0x58, 0x41, 0x88, 0x53, 0x9f, 0xa6, 0xcc, 0xb6, 0x4a,
+	0xc2, 0x35, 0x22, 0xce, 0x37, 0x60, 0x69, 0x45, 0xd1, 0xae, 0x2f, 0xeb, 0x76, 0xed, 0xe7, 0x76,
+	0x69, 0x4e, 0x6e, 0xc4, 0x03, 0xb4, 0x7f, 0xcd, 0x62, 0x21, 0xd2, 0xba, 0x84, 0x09, 0x8c, 0x07,
+	0xa5, 0x13, 0xb2, 0x2d, 0x23, 0x35, 0x15, 0x76, 0x19, 0xb8, 0xbf, 0x6c, 0x4a, 0xc4, 0x63, 0x0f,
+	0x5a, 0x77, 0xd9, 0x24, 0x4f, 0xa1, 0xc3, 0xb8, 0xc7, 0x33, 0x86, 0x7a, 0x9b, 0x63, 0xdd, 0x73,
+	0x4e, 0xc0, 0xc4, 0xcd, 0xb0, 0xc0, 0x17, 0xf5, 0x02, 0xfb, 0x79, 0x81, 0xc8, 0xc8, 0xcb, 0x7b,
+	0x06, 0x5d, 0x3c, 0xde, 0xa3, 0x41, 0xfa, 0xaf, 0x09, 0x6d, 0x64, 0xac, 0xc4, 0xe8, 0x33, 0x80,
+	0xa0, 0x88, 0xa6, 0x3e, 0x42, 0x05, 0x91, 0xeb, 0xa9, 0xfc, 0x1b, 0x98, 0x7f, 0xd5, 0x91, 0x47,
+	0x66, 0x81, 0xaf, 0x52, 0x24, 0x8e, 0x2c, 0xdb, 0x42, 0xca, 0x16, 0x5f, 0x24, 0x2a, 0x3c, 0x7b,
+	0xa7, 0x07, 0x79, 0xa1, 0xb8, 0xed, 0x44, 0x0c, 0x8c, 0x71, 0xb8, 0x50, 0xab, 0x53, 0x51, 0x4b,
+	0x6c, 0x92, 0xa4, 0x81, 0x08, 0x9e, 0x4a, 0x8d, 0xea, 0x48, 0x2f, 0xb9, 0xf7, 0x40, 0x5d, 0xb1,
+	0xd0, 0x6f, 0x01, 0xcf, 0x03, 0x23, 0xa1, 0x1b, 0x44, 0xc8, 0x27, 0x60, 0x32, 0x1e, 0x27, 0x6e,
+	0x18, 0x33, 0xa6, 0xd3, 0xd2, 0x93, 0xc0, 0x95, 0xe8, 0x4b, 0x75, 0xe9, 0xc7, 0x24, 0x48, 0x17,
+	0x98, 0x12, 0xa1, 0xae, 0xea, 0xc9, 0x55, 0xb3, 0x24, 0xa1, 0xa9, 0x3b, 0x15, 0x06, 0xfb, 0x79,
+	0x42, 0x10, 0x7a, 0x23, 0x11, 0x49, 0x08, 0xe3, 0xdf, 0x0b, 0xc2, 0xae, 0x22, 0x20, 0xa4, 0x08,
+	0xe2, 0x3a, 0x88, 0xfc, 0x05, 0x61, 0x10, 0xdd, 0xbb, 0x72, 0x3b, 0xbb, 0xaf, 0xae, 0x43, 0x0e,
+	0xde, 0x0a, 0x4c, 0x9a, 0x88, 0x27, 0xdf, 0x68, 0x22, 0x32, 0x72, 0x8f, 0xfe, 0x32, 0xa0, 0x8f,
+	0xc0, 0x85, 0xb8, 0x34, 0x3c, 0x88, 0xa3, 0x25, 0x6f, 0x1a, 0x8f, 0x7b, 0xd3, 0x5c, 0xe7, 0x8d,
+	0xb1, 0xc6, 0x9b, 0xd6, 0x66, 0x6f, 0x4a, 0xcd, 0xda, 0x35, 0xcd, 0x0a, 0x7f, 0x3a, 0x1b, 0xfc,
+	0xe9, 0x6e, 0xf6, 0xa7, 0xb7, 0xe4, 0xcf, 0x92, 0x0f, 0xe6, 0x36, 0x1f, 0x60, 0xbb, 0x0f, 0xd6,
+	0xaa, 0x0f, 0xe4, 0x04, 0xc0, 0x53, 0x77, 0xd9, 0x0d, 0x94, 0x99, 0x56, 0x79, 0xfe, 0xe2, 0xfb,
+	0x3b, 0x36, 0x35, 0x69, 0xe4, 0x3b, 0xff, 0x36, 0xc1, 0x52, 0x3e, 0xbc, 0xf7, 0xa2, 0x7b, 0x5a,
+	0xaa, 0xdc, 0xa8, 0xaa, 0x5c, 0x48, 0xd2, 0xac, 0x4a, 0x52, 0x0a, 0x68, 0x2c, 0x87, 0xae, 0x2a,
+	0x55, 0x6b, 0xb3, 0x54, 0xed, 0xcd, 0x52, 0x75, 0xb6, 0x49, 0xd5, 0xdd, 0x2e, 0x55, 0x6f, 0xab,
+	0x54, 0xe6, 0x76, 0xa9, 0xc4, 0x4b, 0xdd, 0xc3, 0x0f, 0xad, 0xe4, 0x03, 0xf2, 0xf7, 0x6b, 0xd1,
+	0x12, 0xec, 0x2e, 0x12, 0x84, 0xac, 0x09, 0x1c, 0xd5, 0xd2, 0x3d, 0xa6, 0x2c, 0x89, 0x23, 0x46,
+	0xb7, 0xa6, 0x7c, 0xdd, 0xe7, 0x55, 0x5c, 0x28, 0x5c, 0x17, 0x65, 0x5e, 0xbd, 0x50, 0x38, 0xf6,
+	0xf2, 0x42, 0x5f, 0x41, 0x19, 0x70, 0x62, 0x42, 0xfb, 0x6a, 0xf4, 0x6e, 0x34, 0x19, 0xec, 0x90,
+	0x1e, 0xb4, 0x6e, 0x27, 0xd7, 0x37, 0x83, 0x06, 0x39, 0x82, 0x83, 0x77, 0xe7, 0xe3, 0x9f, 0x2f,
+	0x27, 0xee, 0xe8, 0x07, 0x77, 0x72, 0x7d, 0x77, 0xf1, 0xd3, 0xe5, 0xdb, 0x41, 0x93, 0x00, 0x74,
+	0x14, 0x3c, 0x30, 0x4e, 0xff, 0x36, 0xa0, 0xf3, 0x06, 0xff, 0x85, 0xc8, 0x77, 0x70, 0xf0, 0x23,
+	0xe5, 0x4b, 0xef, 0x7d, 0xb1, 0x35, 0xfe, 0x18, 0x0d, 0x9f, 0xae, 0xbe, 0xf7, 0x92, 0xe6, 0xec,
+	0x90, 0xd7, 0x60, 0x8a, 0xd9, 0x37, 0x32, 0x26, 0x8c, 0xd8, 0xeb, 0xfe, 0x69, 0x24, 0x71, 0x78,
+	0x50, 0xfb, 0xc0, 0xeb, 0xb9, 0xdf, 0xc2, 0xee, 0x2d, 0x17, 0xba, 0xcd, 0x11, 0x14, 0xe1, 0x5b,
+	0x37, 0x7d, 0x58, 0x7f, 0x1b, 0x9c, 0x9d, 0x93, 0x06, 0x39, 0x03, 0x4b, 0x6c, 0xaa, 0xbd, 0x63,
+	0xcb, 0xc5, 0x1e, 0x2e, 0x99, 0xab, 0x77, 0x3b, 0xc3, 0x4a, 0xd5, 0x7b, 0x49, 0x56, 0x03, 0x30,
+	0xac, 0x7f, 0x3e, 0xf4, 0xa4, 0x4b, 0xb0, 0xd0, 0x59, 0xaa, 0x9e, 0x99, 0xa3, 0x1a, 0x27, 0xf7,
+	0x7c, 0xf8, 0xe9, 0x5a, 0x38, 0x8f, 0x02, 0xee, 0x6d, 0xa9, 0x6b, 0xa7, 0x96, 0x39, 0xac, 0xf3,
+	0x71, 0x64, 0x58, 0x77, 0xdb, 0xd9, 0x99, 0xaa, 0xdf, 0xd3, 0xb3, 0xff, 0x03, 0x00, 0x00, 0xff,
+	0xff, 0x5f, 0xe6, 0x50, 0x09, 0xbc, 0x0a, 0x00, 0x00,
 }
