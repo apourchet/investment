@@ -1,0 +1,26 @@
+package ema
+
+type Ema struct {
+	Alpha float64
+	Value float64
+	Steps int
+}
+
+func NewEma(alpha float64) *Ema {
+	return &Ema{alpha, 0, 0}
+}
+
+func AlphaFromN(N int) float64 {
+	n := float64(N)
+	return 1. / (n + 2.)
+}
+
+func (e *Ema) Step(val float64) float64 {
+	if e.Steps == 0 {
+		e.Value = val
+	} else {
+		e.Value = e.Value*e.Alpha + val*(1-e.Alpha)
+	}
+	e.Steps += 1
+	return e.Value
+}
