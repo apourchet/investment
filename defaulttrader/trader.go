@@ -18,7 +18,7 @@ func main() {
 
 	for {
 		q, err := stream.Recv()
-		if err == io.EOF {
+		if err == io.EOF || q == nil {
 			// Done reading
 			return
 		}

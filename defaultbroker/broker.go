@@ -1,12 +1,16 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	bc "github.com/apourchet/investment/lib/broadcaster"
 	pb "github.com/apourchet/investment/protos"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"io"
 	"net"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -16,6 +20,7 @@ const (
 
 type defaultBroker struct {
 	broadcaster *bc.Broadcaster
+	lastquote   *pb.Quote
 }
 
 func (b *defaultBroker) GetQuote(ctx context.Context, qid *pb.QuoteID) (*pb.Quote, error) {
@@ -42,21 +47,34 @@ func (b *defaultBroker) StreamQuotes(qid *pb.QuoteID, stream pb.Broker_StreamQuo
 	return nil
 }
 
-func (b *defaultBroker) simulate() {
+func (b *defaultBroker) simulate(datafile string) {
+	in, err := os.Open(datafile)
+	if err != nil {
+		fmt.Println("Could not open data file.")
+		os.Exit(1)
+	}
+
+	reader := csv.NewReader(in)
 	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		fmt.Println(record)
 		q := pb.Quote{}
 		q.Name = "EURUSD"
-		q.Bid = 42
-		q.Ask = 43
+		q.Bid, err = strconv.ParseFloat(record[2], 64)
+		q.Ask, err = strconv.ParseFloat(record[4], 64)
 
+		b.lastquote = &q
 		b.broadcaster.Emit(q)
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Millisecond * 10)
 	}
 }
 
 func main() {
-	broker := defaultBroker{bc.NewBroadcaster()}
-	go broker.simulate()
+	broker := defaultBroker{bc.NewBroadcaster(), nil}
+	go broker.simulate("data/DAT_MT_EURUSD_M1_2006.csv")
 
 	lis, _ := net.Listen("tcp", ":8080")
 	server := grpc.NewServer()
