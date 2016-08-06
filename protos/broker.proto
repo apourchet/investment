@@ -30,7 +30,11 @@ message AuthToken {
 }
 
 message InstrumentID {
-    string value = 1;
+    enum ID {
+        EURUSD = 0;
+        GBPUSD = 1;
+    }
+    ID id = 1;
 }
 
 message InstrumentIDList {
@@ -38,7 +42,7 @@ message InstrumentIDList {
 }
 
 message Instrument {
-    string name = 1;
+    InstrumentID.ID name = 1;
     string display_name = 2;
     string pip = 3;
     int32 max_trade_units = 4;
@@ -100,7 +104,7 @@ message OrderID {
 
 message Order {
     string id = 1;
-    string instrument = 2;
+    InstrumentID.ID instrument = 2;
     int32 units = 3;
     OrderSide side = 4;
     OrderType type = 5; //The type of the order ‘limit’, ‘stop’, ‘marketIfTouched’ or ‘market’
@@ -119,7 +123,7 @@ message OrderList {
 }
 
 message OrderCreation {
-    string instrument = 1;
+    InstrumentID.ID instrument = 1;
     int32 units = 2;
     OrderSide side = 3;
     OrderType type = 4;

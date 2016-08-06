@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	ONLY_INSTRUMENTID = "EURUSD"
+	ONLY_INSTRUMENTID = pb.InstrumentID_EURUSD
 )
 
 type DefaultBroker struct {
@@ -26,7 +26,7 @@ func NewDefaultBroker() *DefaultBroker {
 func (b *DefaultBroker) GetInstrumentList(ctx context.Context, token *pb.AuthToken) (ls *pb.InstrumentList, err error) {
 	ins := pb.Instrument{}
 	ins.Name = ONLY_INSTRUMENTID
-	ins.DisplayName = ins.Name
+	ins.DisplayName = "EURUSD" // TODO map the pb.InstrumentIDs to displaynames
 	ins.Pip = "0.0001"
 	ins.MaxTradeUnits = 10000
 	ls.Value = append(ls.Value, &ins)
@@ -35,7 +35,7 @@ func (b *DefaultBroker) GetInstrumentList(ctx context.Context, token *pb.AuthTok
 
 func (b *DefaultBroker) GetPrices(ctx context.Context, il *pb.InstrumentIDList) (ls *pb.QuoteList, err error) {
 	for _, iid := range il.Value {
-		if iid.Value == ONLY_INSTRUMENTID {
+		if iid.Id == ONLY_INSTRUMENTID {
 			ls.Value = append(ls.Value, b.lastquote)
 		}
 	}
@@ -43,8 +43,8 @@ func (b *DefaultBroker) GetPrices(ctx context.Context, il *pb.InstrumentIDList) 
 }
 
 func (b *DefaultBroker) StreamQuotes(iid *pb.InstrumentID, stream pb.Broker_StreamQuotesServer) error {
-	if iid.Value != ONLY_INSTRUMENTID {
-		return fmt.Errorf("Unsupported InstrumentID. Only support " + ONLY_INSTRUMENTID)
+	if iid.Id != ONLY_INSTRUMENTID {
+		return fmt.Errorf("Unsupported InstrumentID. Only support " + "EURUSD") // TODO
 	}
 	cb := make(chan interface{}, 10)
 	rid := b.broadcaster.Register(cb)

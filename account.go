@@ -13,7 +13,7 @@ type Account struct {
 	Balance         float64
 	UnrealizedPl    float64
 	RealizedPl      float64
-	OpenPositions   map[string]*OpenPosition
+	OpenPositions   map[pb.InstrumentID_ID]*OpenPosition
 	MarginRate      float64
 	MarginUsed      float64
 	MarginAvailable float64
@@ -22,7 +22,7 @@ type Account struct {
 }
 
 type OpenPosition struct {
-	Instrument string
+	Instrument pb.InstrumentID_ID
 	Units      int32
 	Price      float64
 	Side       pb.OrderSide
@@ -31,7 +31,7 @@ type OpenPosition struct {
 func CreateNewAccount() *Account {
 	a := &Account{}
 	a.Balance = 10000
-	a.OpenPositions = make(map[string]*OpenPosition)
+	a.OpenPositions = make(map[pb.InstrumentID_ID]*OpenPosition)
 	return a
 }
 
@@ -87,11 +87,14 @@ func (a *Account) MergePositions(from, to *OpenPosition) {
 		to.Units = totalUnits
 	} else {
 		if from.Units == to.Units {
+			fmt.Println("Closing position")
 			a.ClosePosition(to, from.Price)
 		} else if to.Units > from.Units {
+			fmt.Println("Tightening position")
 			to.Units -= from.Units
 			a.Balance += from.FloatUnits() * to.Price
 		} else if from.Units > to.Units {
+			fmt.Println("Flipping position")
 			a.ClosePosition(to, from.Price)
 			from.Units -= to.Units
 			a.OpenPositions[from.Instrument] = from
