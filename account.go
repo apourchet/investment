@@ -69,11 +69,11 @@ func (pos *OpenPosition) SplitPosition(units int32) (pos1, pos2 *OpenPosition) {
 }
 
 func (pos *OpenPosition) String() string {
-	return fmt.Sprintf("u: %d\np: %f\ns: %d\n", pos.Units, pos.Price, pos.Side)
+	return fmt.Sprintf("u: %d\np: %f\ns: %d", pos.Units, pos.Price, pos.Side)
 }
 
 func (a *Account) ClosePosition(pos *OpenPosition, price float64) {
-	fmt.Println("Closing Position: " + pos.String())
+	fmt.Println("Closing Position: \n" + pos.String())
 	a.Balance += pos.Value() // Gain value of position
 	if pos.Side == pb.OrderSide_BUY {
 		a.Balance += pos.FloatUnits() * (price - pos.Price) // Gain delta
@@ -96,7 +96,6 @@ func (a *Account) MergePositions(from, to *OpenPosition) {
 		to.Units = totalUnits
 	} else {
 		if from.Units == to.Units {
-			fmt.Println("Closing position")
 			a.ClosePosition(to, from.Price)
 		} else if to.Units > from.Units {
 			fmt.Println("Tightening position")

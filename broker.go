@@ -89,9 +89,8 @@ func (b *DefaultBroker) CreateOrder(ctx context.Context, oc *pb.OrderCreation) (
 	ocr.Order.Id = "1234"
 	ocr.Order.Type = pb.OrderType_MARKET
 
-	fmt.Println(b.account.Balance)
 	b.account.ProcessOrder(ocr.Order)
-	fmt.Println(b.account.Balance)
+	fmt.Printf("Balance: %f\n", b.account.Balance)
 	return ocr, nil
 }
 
@@ -100,7 +99,7 @@ func (b *DefaultBroker) ChangeOrder(ctx context.Context, oc *pb.OrderChange) (*p
 }
 
 func (b *DefaultBroker) OnQuote(q *pb.Quote) {
-	fmt.Println(q)
+	// fmt.Println(q)
 	b.lastquote = q
 	b.broadcaster.Emit(q)
 }
