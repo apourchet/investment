@@ -16,33 +16,6 @@ import (
 
 type Strat func(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClient)
 
-func UpDownCSVStrategy(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClient) {
-	for {
-		q, err := stream.Recv()
-		if err == io.EOF || q == nil {
-			return
-		}
-		if int(q.Bid) == 5 {
-			// Sell a bunch
-			o := &pb.OrderCreation{}
-			o.Instrument = pb.InstrumentID_EURUSD
-			o.Type = pb.OrderType_MARKET
-			o.Side = pb.OrderSide_SELL
-			o.Units = 100
-			broker.CreateOrder(context.Background(), o)
-		}
-		if int(q.Bid) == 1 {
-			// Buy a bunch
-			o := &pb.OrderCreation{}
-			o.Instrument = pb.InstrumentID_EURUSD
-			o.Type = pb.OrderType_MARKET
-			o.Side = pb.OrderSide_BUY
-			o.Units = 100
-			broker.CreateOrder(context.Background(), o)
-		}
-	}
-}
-
 func DownUpCSVStrategy(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClient) {
 	for {
 		q, err := stream.Recv()
@@ -95,7 +68,7 @@ func main() {
 	time.Sleep(time.Millisecond * 50)
 
 	milliStep := 200
-	go startTrader(UpDownCSVStrategy)
+	go startTrader(DownUpCSVStrategy)
 	invt.Simulate(broker, "./testdata/updown.csv", milliStep)
 
 	go startTrader(DownUpCSVStrategy)
