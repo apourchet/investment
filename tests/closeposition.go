@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"net"
 	"os"
 	"time"
 
@@ -15,7 +14,9 @@ import (
 	pb "github.com/apourchet/investment/protos"
 )
 
-func SimpleCSVStrategy(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClient) {
+type Strat func(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClient)
+
+func UpDownCSVStrategy(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClient) {
 	for {
 		q, err := stream.Recv()
 		if err == io.EOF || q == nil {
@@ -24,7 +25,7 @@ func SimpleCSVStrategy(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClie
 		if int(q.Bid) == 5 {
 			// Sell a bunch
 			o := &pb.OrderCreation{}
-			o.Instrument = "EURUSD"
+			o.Instrument = pb.InstrumentID_EURUSD
 			o.Type = pb.OrderType_MARKET
 			o.Side = pb.OrderSide_SELL
 			o.Units = 100
@@ -33,7 +34,7 @@ func SimpleCSVStrategy(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClie
 		if int(q.Bid) == 1 {
 			// Buy a bunch
 			o := &pb.OrderCreation{}
-			o.Instrument = "EURUSD"
+			o.Instrument = pb.InstrumentID_EURUSD
 			o.Type = pb.OrderType_MARKET
 			o.Side = pb.OrderSide_BUY
 			o.Units = 100
@@ -42,31 +43,44 @@ func SimpleCSVStrategy(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClie
 	}
 }
 
-func startBroker(datafile string) {
-	milliStep := 200
-	broker := invt.NewDefaultBroker()
-	go invt.Simulate(broker, datafile, milliStep)
-
-	lis, err := net.Listen("tcp", ":8080")
-	exitOnError(err)
-
-	server := grpc.NewServer()
-	pb.RegisterBrokerServer(server, broker)
-	err = server.Serve(lis)
-	exitOnError(err)
+func DownUpCSVStrategy(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClient) {
+	for {
+		q, err := stream.Recv()
+		if err == io.EOF || q == nil {
+			return
+		}
+		if int(q.Bid) == 1 {
+			// Buy a bunch
+			o := &pb.OrderCreation{}
+			o.Instrument = pb.InstrumentID_EURUSD
+			o.Type = pb.OrderType_MARKET
+			o.Side = pb.OrderSide_BUY
+			o.Units = 100
+			broker.CreateOrder(context.Background(), o)
+		}
+		if int(q.Bid) == 5 {
+			// Sell a bunch
+			o := &pb.OrderCreation{}
+			o.Instrument = pb.InstrumentID_EURUSD
+			o.Type = pb.OrderType_MARKET
+			o.Side = pb.OrderSide_SELL
+			o.Units = 100
+			broker.CreateOrder(context.Background(), o)
+		}
+	}
 }
 
-func startTrader() {
+func startTrader(strat Strat) {
 	conn, err := grpc.Dial(":8080", grpc.WithInsecure())
 	exitOnError(err)
 	defer conn.Close()
 
 	broker := pb.NewBrokerClient(conn)
-	iid := &pb.InstrumentID{"EURUSD"}
+	iid := &pb.InstrumentID{pb.InstrumentID_EURUSD}
 	stream, err := broker.StreamQuotes(context.Background(), iid)
 	exitOnError(err)
 
-	SimpleCSVStrategy(broker, stream)
+	strat(broker, stream)
 }
 
 func exitOnError(err error) {
@@ -76,7 +90,14 @@ func exitOnError(err error) {
 }
 
 func main() {
-	go startBroker("./data/downup.csv")
+	broker := invt.NewDefaultBroker()
+	go broker.Start()
 	time.Sleep(time.Millisecond * 50)
-	startTrader()
+
+	milliStep := 200
+	go startTrader(UpDownCSVStrategy)
+	invt.Simulate(broker, "./testdata/updown.csv", milliStep)
+
+	go startTrader(DownUpCSVStrategy)
+	invt.Simulate(broker, "./testdata/downup.csv", milliStep)
 }

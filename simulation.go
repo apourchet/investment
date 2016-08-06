@@ -24,6 +24,7 @@ func Simulate(b Simulatable, datafile string, milliStep int) {
 		os.Exit(1)
 	}
 
+	fmt.Println("Simulating: " + datafile)
 	reader := csv.NewReader(in)
 	for {
 		record, err := reader.Read()

@@ -13,7 +13,7 @@ type Account struct {
 	Balance         float64
 	UnrealizedPl    float64
 	RealizedPl      float64
-	OpenPositions   map[string]*OpenPosition
+	OpenPositions   map[pb.InstrumentID_ID]*OpenPosition
 	MarginRate      float64
 	MarginUsed      float64
 	MarginAvailable float64
@@ -22,7 +22,7 @@ type Account struct {
 }
 
 type OpenPosition struct {
-	Instrument string
+	Instrument pb.InstrumentID_ID
 	Units      int32
 	Price      float64
 	Side       pb.OrderSide
@@ -31,7 +31,7 @@ type OpenPosition struct {
 func CreateNewAccount() *Account {
 	a := &Account{}
 	a.Balance = 10000
-	a.OpenPositions = make(map[string]*OpenPosition)
+	a.OpenPositions = make(map[pb.InstrumentID_ID]*OpenPosition)
 	return a
 }
 
@@ -68,9 +68,18 @@ func (pos *OpenPosition) SplitPosition(units int32) (pos1, pos2 *OpenPosition) {
 	return pos1, pos2
 }
 
+func (pos *OpenPosition) String() string {
+	return fmt.Sprintf("u: %d\np: %f\ns: %d\n", pos.Units, pos.Price, pos.Side)
+}
+
 func (a *Account) ClosePosition(pos *OpenPosition, price float64) {
-	a.Balance += pos.Value()                            // Gain value of position
-	a.Balance += pos.FloatUnits() * (pos.Price - price) // Gain delta
+	fmt.Println("Closing Position: " + pos.String())
+	a.Balance += pos.Value() // Gain value of position
+	if pos.Side == pb.OrderSide_BUY {
+		a.Balance += pos.FloatUnits() * (price - pos.Price) // Gain delta
+	} else {
+		a.Balance += pos.FloatUnits() * (pos.Price - price) // Gain delta
+	}
 	delete(a.OpenPositions, pos.Instrument)
 }
 
@@ -89,9 +98,11 @@ func (a *Account) MergePositions(from, to *OpenPosition) {
 		if from.Units == to.Units {
 			a.ClosePosition(to, from.Price)
 		} else if to.Units > from.Units {
+			fmt.Println("Tightening position")
 			to.Units -= from.Units
 			a.Balance += from.FloatUnits() * to.Price
 		} else if from.Units > to.Units {
+			fmt.Println("Flipping position")
 			a.ClosePosition(to, from.Price)
 			from.Units -= to.Units
 			a.OpenPositions[from.Instrument] = from
