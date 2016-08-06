@@ -96,6 +96,7 @@ func (a *Account) MergePositions(from, to *OpenPosition) {
 		to.Units = totalUnits
 	} else {
 		if from.Units == to.Units {
+			fmt.Println("Closing position")
 			a.ClosePosition(to, from.Price)
 		} else if to.Units > from.Units {
 			fmt.Println("Tightening position")
