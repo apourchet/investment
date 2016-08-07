@@ -69,8 +69,8 @@ func main() {
 
 	milliStep := 200
 	go startTrader(DownUpCSVStrategy)
-	invt.Simulate(broker, "./testdata/updown.csv", milliStep)
+	invt.SimulateDataStream(broker, "tests/testdata/updown.csv", milliStep)
 
 	go startTrader(DownUpCSVStrategy)
-	invt.Simulate(broker, "./testdata/downup.csv", milliStep)
+	invt.SimulateDataStream(broker, "tests/testdata/downup.csv", milliStep)
 }
