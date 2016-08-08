@@ -1,14 +1,22 @@
 package invt
 
 func Buy(a *Account, instrumentId string, units int32, price float64) {
-	do(a, instrumentId, units, price, "buy")
+	Trade(a, instrumentId, units, price, SIDE_BUY)
 }
 
 func Sell(a *Account, instrumentId string, units int32, price float64) {
-	do(a, instrumentId, units, price, "sell")
+	Trade(a, instrumentId, units, price, SIDE_SELL)
 }
 
-func do(a *Account, instrumentId string, units int32, price float64, side string) {
+func TradeQuote(a *Account, q *Quote, units int32, side int) {
+	if side == SIDE_BUY {
+		Trade(a, q.InstrumentId, units, q.Ask, SIDE_BUY)
+	} else {
+		Trade(a, q.InstrumentId, units, q.Bid, SIDE_BUY)
+	}
+}
+
+func Trade(a *Account, instrumentId string, units int32, price float64, side int) {
 	pos := &OpenPosition{instrumentId, units, price, side}
 	if other, ok := a.OpenPositions[pos.InstrumentId]; ok {
 		mergePositions(a, pos, other)
@@ -19,10 +27,12 @@ func do(a *Account, instrumentId string, units int32, price float64, side string
 
 func closePosition(a *Account, pos *OpenPosition, price float64) {
 	a.Balance += pos.Value() // Gain value of position
-	if pos.Side == "buy" {
-		a.Balance += pos.FloatUnits() * (price - pos.Price) // Gain delta
+	if pos.Side == SIDE_BUY {
+		a.Balance += pos.FloatUnits() * (price - pos.Price)    // Gain delta
+		a.RealizedPl += pos.FloatUnits() * (price - pos.Price) // Gain delta
 	} else {
-		a.Balance += pos.FloatUnits() * (pos.Price - price) // Gain delta
+		a.Balance += pos.FloatUnits() * (pos.Price - price)    // Gain delta
+		a.RealizedPl += pos.FloatUnits() * (pos.Price - price) // Gain delta
 	}
 }
 

@@ -76,7 +76,7 @@ message OrderListResp {
 message OrderCreationReq {
     AuthToken token = 1;
     string instrumentId = 2;
-    string units = 3;
+    int32 units = 3;
     string side = 4;
     string type = 5;
 }

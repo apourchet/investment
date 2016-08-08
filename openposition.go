@@ -6,7 +6,19 @@ type OpenPosition struct {
 	InstrumentId string
 	Units        int32
 	Price        float64
-	Side         string
+	Side         int
+}
+
+const (
+	SIDE_BUY  = iota
+	SIDE_SELL = iota
+)
+
+func ParseSide(sideStr string) int {
+	if sideStr == "buy" {
+		return SIDE_BUY
+	}
+	return SIDE_SELL
 }
 
 func (pos *OpenPosition) FloatUnits() float64 {
@@ -18,10 +30,10 @@ func (pos *OpenPosition) Value() float64 {
 }
 
 func (pos *OpenPosition) SwitchSide() {
-	if pos.Side == "buy" {
-		pos.Side = "sell"
+	if pos.Side == SIDE_BUY {
+		pos.Side = SIDE_SELL
 	} else {
-		pos.Side = "buy"
+		pos.Side = SIDE_BUY
 	}
 }
 

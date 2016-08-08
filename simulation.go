@@ -5,19 +5,16 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"time"
-
-	pb "github.com/apourchet/investment/protos"
 )
 
 type Simulatable interface {
-	pb.BrokerServer
+	ParseQuote([]string) *Quote
 	OnQuote(*Quote)
 	OnEnd()
 }
 
-func SimulateDataStream(b Simulatable, datafile string, milliStep int) {
+func SimulateDataStream(s Simulatable, datafile string, milliStep int) {
 	in, err := os.Open(datafile)
 	if err != nil {
 		fmt.Println("Could not open data file: " + err.Error())
@@ -30,17 +27,12 @@ func SimulateDataStream(b Simulatable, datafile string, milliStep int) {
 		record, err := reader.Read()
 		if err == io.EOF {
 			fmt.Println("Simulation Ended")
-			b.OnEnd()
+			s.OnEnd()
 			break
 		}
-		q := &Quote{}
-		q.InstrumentId = "EURUSD"
-		q.Bid, err = strconv.ParseFloat(record[2], 64)
-		q.Ask, err = strconv.ParseFloat(record[4], 64)
-		// TODO
-		// q.Time = date.ParseDate(record[0])
+		q := s.ParseQuote(record)
 
-		b.OnQuote(q)
+		s.OnQuote(q)
 		time.Sleep(time.Millisecond * time.Duration(milliStep))
 	}
 }

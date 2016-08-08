@@ -7,6 +7,8 @@ import (
 
 	"fmt"
 
+	"strconv"
+
 	bc "github.com/apourchet/investment/lib/broadcaster"
 	pb "github.com/apourchet/investment/protos"
 	"golang.org/x/net/context"
@@ -18,7 +20,7 @@ const (
 
 type DefaultBroker struct {
 	broadcaster *bc.Broadcaster
-	lastquote   *pb.Quote
+	lastquote   *Quote
 	account     *Account
 }
 
@@ -36,7 +38,7 @@ func (b *DefaultBroker) GetPrices(context.Context, *pb.PriceListReq) (*pb.PriceL
 
 func (b *DefaultBroker) StreamPrices(req *pb.StreamPricesReq, stream pb.Broker_StreamPricesServer) error {
 	if req.InstrumentId != ONLY_INSTRUMENTID {
-		return fmt.Errorf("Unsupported InstrumentID. Only support " + "EURUSD") // TODO
+		return fmt.Errorf("Unsupported InstrumentID. Only support " + "EURUSD")
 	}
 	cb := make(chan interface{}, 10)
 	rid := b.broadcaster.Register(cb)
@@ -69,11 +71,14 @@ func (b *DefaultBroker) GetOrders(context.Context, *pb.OrderListReq) (*pb.OrderL
 	return nil, nil
 }
 
-func (b *DefaultBroker) CreateOrder(context.Context, *pb.OrderCreationReq) (*pb.OrderCreationResp, error) {
+func (b *DefaultBroker) CreateOrder(ctx context.Context, req *pb.OrderCreationReq) (*pb.OrderCreationResp, error) {
+	if req.Type == "market" {
+		TradeQuote(b.account, b.lastquote, req.Units, ParseSide(req.Side))
+	}
 	return nil, nil
 }
 
-func (b *DefaultBroker) OnQuote(q *pb.Quote) {
+func (b *DefaultBroker) OnQuote(q *Quote) {
 	b.lastquote = q
 	b.broadcaster.Emit(q)
 }
@@ -93,6 +98,24 @@ func (b *DefaultBroker) Start() error {
 
 	server.Serve(lis)
 	return nil
+}
+
+func (b *DefaultBroker) ParseQuote(record []string) *Quote {
+	q := &Quote{}
+	q.InstrumentId = "EURUSD"
+	v, err := strconv.ParseFloat(record[2], 64)
+	q.Bid = v
+	if err != nil {
+		return nil
+	}
+
+	q.Ask, err = strconv.ParseFloat(record[4], 64)
+	if err != nil {
+		return nil
+	}
+	// TODO
+	// q.Time = date.ParseDate(record[0])
+	return q
 }
 
 //func (b *DefaultBroker) GetPrices(ctx context.Context, il *pb.InstrumentIDList) (ls *pb.QuoteList, err error) {
