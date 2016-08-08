@@ -75,7 +75,7 @@ message AccountList {
 }
 
 message Quote {
-    string name = 1;
+    InstrumentID.ID id = 1;
     string time = 2;
     double bid = 3;
     double ask = 4;

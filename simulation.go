@@ -35,7 +35,18 @@ func (as *AccountSimulator) Buy(instrumentID pb.InstrumentID_ID, units int32, pr
 	o.Type = pb.OrderType_MARKET
 	as.orders = append(as.orders, o)
 	return as
+}
 
+func (as *AccountSimulator) BuyNow(instrumentID pb.InstrumentID_ID, units int32, price float64) *AccountSimulator {
+	o := &pb.Order{}
+	o.Instrument = instrumentID
+	o.Units = units
+	o.Price = price
+	o.Side = pb.OrderSide_BUY
+	o.Type = pb.OrderType_MARKET
+	as.orders = append(as.orders, o)
+	as.Account.ProcessOrder(o)
+	return as
 }
 
 func (as *AccountSimulator) Sell(instrumentID pb.InstrumentID_ID, units int32, price float64) *AccountSimulator {
@@ -46,6 +57,17 @@ func (as *AccountSimulator) Sell(instrumentID pb.InstrumentID_ID, units int32, p
 	o.Side = pb.OrderSide_SELL
 	o.Type = pb.OrderType_MARKET
 	as.orders = append(as.orders, o)
+	return as
+}
+
+func (as *AccountSimulator) SellNow(instrumentID pb.InstrumentID_ID, units int32, price float64) *AccountSimulator {
+	o := &pb.Order{}
+	o.Instrument = instrumentID
+	o.Units = units
+	o.Price = price
+	o.Side = pb.OrderSide_SELL
+	o.Type = pb.OrderType_MARKET
+	as.Account.ProcessOrder(o)
 	return as
 }
 
@@ -72,7 +94,7 @@ func SimulateDataStream(b Simulatable, datafile string, milliStep int) {
 			break
 		}
 		q := &pb.Quote{}
-		q.Name = "EURUSD"
+		q.Id = pb.InstrumentID_EURUSD
 		q.Bid, err = strconv.ParseFloat(record[2], 64)
 		q.Ask, err = strconv.ParseFloat(record[4], 64)
 		// TODO

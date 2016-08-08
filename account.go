@@ -51,21 +51,13 @@ func (pos *OpenPosition) SwitchSide() {
 	}
 }
 
-func (pos *OpenPosition) SplitPosition(units int32) (pos1, pos2 *OpenPosition) {
+func (pos *OpenPosition) SplitPosition(units int32) *OpenPosition {
 	if units > pos.Units {
-		return pos, nil
+		panic("Cannot split position with this many units")
 	}
-	pos1.Instrument = pos.Instrument
-	pos1.Units = pos.Units - units
-	pos1.Price = pos.Price
-	pos1.Side = pos.Side
+	pos.Units -= units
 
-	pos2.Instrument = pos.Instrument
-	pos2.Units = units
-	pos2.Price = pos.Price
-	pos2.Side = pos.Side
-
-	return pos1, pos2
+	return &OpenPosition{pos.Instrument, units, pos.Price, pos.Side}
 }
 
 func (pos *OpenPosition) String() string {
@@ -80,7 +72,7 @@ func (a *Account) ClosePosition(pos *OpenPosition, price float64) {
 	} else {
 		a.Balance += pos.FloatUnits() * (pos.Price - price) // Gain delta
 	}
-	delete(a.OpenPositions, pos.Instrument)
+	fmt.Println("New Balance: ", a.Balance)
 }
 
 func (a *Account) MergePositions(from, to *OpenPosition) {
@@ -96,18 +88,26 @@ func (a *Account) MergePositions(from, to *OpenPosition) {
 	} else {
 		if from.Units == to.Units {
 			a.ClosePosition(to, from.Price)
+			delete(a.OpenPositions, to.Instrument)
 		} else if to.Units > from.Units {
-			fmt.Println("Tightening position")
-			to.Units -= from.Units
-			a.Balance += from.FloatUnits() * to.Price
+			fmt.Println("Reducing position")
+			toclose := to.SplitPosition(from.Units)
+			a.ClosePosition(toclose, from.Price)
 		} else if from.Units > to.Units {
 			fmt.Println("Flipping position")
 			a.ClosePosition(to, from.Price)
+			delete(a.OpenPositions, to.Instrument)
 			from.Units -= to.Units
-			a.OpenPositions[from.Instrument] = from
-			a.Balance -= from.Value()
+			a.OpenNewPosition(from)
 		}
 	}
+}
+
+func (a *Account) OpenNewPosition(pos *OpenPosition) {
+	fmt.Println("Opening new position")
+	a.Balance -= pos.Value()
+	a.OpenPositions[pos.Instrument] = pos
+	fmt.Println("Balance: ", a.Balance)
 }
 
 func (a *Account) ProcessOrder(o *pb.Order) {
@@ -117,9 +117,7 @@ func (a *Account) ProcessOrder(o *pb.Order) {
 		if other, ok := a.OpenPositions[pos.Instrument]; ok {
 			a.MergePositions(pos, other)
 		} else {
-			fmt.Println("Opening new position")
-			a.Balance -= pos.Value()
-			a.OpenPositions[pos.Instrument] = pos
+			a.OpenNewPosition(pos)
 		}
 	}
 }
