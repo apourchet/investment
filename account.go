@@ -65,19 +65,16 @@ func (pos *OpenPosition) String() string {
 }
 
 func (a *Account) ClosePosition(pos *OpenPosition, price float64) {
-	fmt.Println("Closing Position: \n" + pos.String())
 	a.Balance += pos.Value() // Gain value of position
 	if pos.Side == pb.OrderSide_BUY {
 		a.Balance += pos.FloatUnits() * (price - pos.Price) // Gain delta
 	} else {
 		a.Balance += pos.FloatUnits() * (pos.Price - price) // Gain delta
 	}
-	fmt.Println("New Balance: ", a.Balance)
 }
 
 func (a *Account) MergePositions(from, to *OpenPosition) {
 	if from.Side == to.Side {
-		fmt.Println("Widening position")
 		a.Balance -= from.Value()
 		totalUnits := from.Units + to.Units
 		totalValue := from.Value() + to.Value()
@@ -90,11 +87,9 @@ func (a *Account) MergePositions(from, to *OpenPosition) {
 			a.ClosePosition(to, from.Price)
 			delete(a.OpenPositions, to.Instrument)
 		} else if to.Units > from.Units {
-			fmt.Println("Reducing position")
 			toclose := to.SplitPosition(from.Units)
 			a.ClosePosition(toclose, from.Price)
 		} else if from.Units > to.Units {
-			fmt.Println("Flipping position")
 			a.ClosePosition(to, from.Price)
 			delete(a.OpenPositions, to.Instrument)
 			from.Units -= to.Units
@@ -104,15 +99,12 @@ func (a *Account) MergePositions(from, to *OpenPosition) {
 }
 
 func (a *Account) OpenNewPosition(pos *OpenPosition) {
-	fmt.Println("Opening new position")
 	a.Balance -= pos.Value()
 	a.OpenPositions[pos.Instrument] = pos
-	fmt.Println("Balance: ", a.Balance)
 }
 
 func (a *Account) ProcessOrder(o *pb.Order) {
 	if o.Type == pb.OrderType_MARKET {
-		fmt.Println("Market Order")
 		pos := &OpenPosition{o.Instrument, o.Units, o.Price, o.Side}
 		if other, ok := a.OpenPositions[pos.Instrument]; ok {
 			a.MergePositions(pos, other)
