@@ -28,9 +28,10 @@ type OpenPosition struct {
 	Side       pb.OrderSide
 }
 
-func CreateNewAccount() *Account {
+func CreateNewAccount(balance float64) *Account {
 	a := &Account{}
-	a.Balance = 10000
+	a.Balance = balance
+	a.MarginRate = 0.02
 	a.OpenPositions = make(map[pb.InstrumentID_ID]*OpenPosition)
 	return a
 }

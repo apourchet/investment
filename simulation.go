@@ -22,8 +22,8 @@ type AccountSimulator struct {
 	orders  []*pb.Order
 }
 
-func NewAccountSimulator() *AccountSimulator {
-	return &AccountSimulator{CreateNewAccount(), make([]*pb.Order, 0)}
+func NewAccountSimulator(balance float64) *AccountSimulator {
+	return &AccountSimulator{CreateNewAccount(balance), make([]*pb.Order, 0)}
 }
 
 func (as *AccountSimulator) Buy(instrumentID pb.InstrumentID_ID, units int32, price float64) *AccountSimulator {

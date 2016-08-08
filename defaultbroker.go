@@ -23,7 +23,7 @@ type DefaultBroker struct {
 }
 
 func NewDefaultBroker() *DefaultBroker {
-	return &DefaultBroker{bc.NewBroadcaster(), nil, CreateNewAccount()}
+	return &DefaultBroker{bc.NewBroadcaster(), nil, CreateNewAccount(10000)}
 }
 
 func (b *DefaultBroker) GetInstrumentList(ctx context.Context, token *pb.AuthToken) (ls *pb.InstrumentList, err error) {
