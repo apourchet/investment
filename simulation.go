@@ -13,68 +13,8 @@ import (
 
 type Simulatable interface {
 	pb.BrokerServer
-	OnQuote(*pb.Quote)
+	OnQuote(*Quote)
 	OnEnd()
-}
-
-type AccountSimulator struct {
-	Account *Account
-	orders  []*pb.Order
-}
-
-func NewAccountSimulator(balance float64) *AccountSimulator {
-	return &AccountSimulator{CreateNewAccount(balance), make([]*pb.Order, 0)}
-}
-
-func (as *AccountSimulator) Buy(instrumentID pb.InstrumentID_ID, units int32, price float64) *AccountSimulator {
-	o := &pb.Order{}
-	o.Instrument = instrumentID
-	o.Units = units
-	o.Price = price
-	o.Side = pb.OrderSide_BUY
-	o.Type = pb.OrderType_MARKET
-	as.orders = append(as.orders, o)
-	return as
-}
-
-func (as *AccountSimulator) BuyNow(instrumentID pb.InstrumentID_ID, units int32, price float64) *AccountSimulator {
-	o := &pb.Order{}
-	o.Instrument = instrumentID
-	o.Units = units
-	o.Price = price
-	o.Side = pb.OrderSide_BUY
-	o.Type = pb.OrderType_MARKET
-	as.orders = append(as.orders, o)
-	as.Account.ProcessOrder(o)
-	return as
-}
-
-func (as *AccountSimulator) Sell(instrumentID pb.InstrumentID_ID, units int32, price float64) *AccountSimulator {
-	o := &pb.Order{}
-	o.Instrument = instrumentID
-	o.Units = units
-	o.Price = price
-	o.Side = pb.OrderSide_SELL
-	o.Type = pb.OrderType_MARKET
-	as.orders = append(as.orders, o)
-	return as
-}
-
-func (as *AccountSimulator) SellNow(instrumentID pb.InstrumentID_ID, units int32, price float64) *AccountSimulator {
-	o := &pb.Order{}
-	o.Instrument = instrumentID
-	o.Units = units
-	o.Price = price
-	o.Side = pb.OrderSide_SELL
-	o.Type = pb.OrderType_MARKET
-	as.Account.ProcessOrder(o)
-	return as
-}
-
-func (as *AccountSimulator) Simulate() {
-	for _, o := range as.orders {
-		as.Account.ProcessOrder(o)
-	}
 }
 
 func SimulateDataStream(b Simulatable, datafile string, milliStep int) {
@@ -93,8 +33,8 @@ func SimulateDataStream(b Simulatable, datafile string, milliStep int) {
 			b.OnEnd()
 			break
 		}
-		q := &pb.Quote{}
-		q.Id = pb.InstrumentID_EURUSD
+		q := &Quote{}
+		q.InstrumentId = "EURUSD"
 		q.Bid, err = strconv.ParseFloat(record[2], 64)
 		q.Ask, err = strconv.ParseFloat(record[4], 64)
 		// TODO
