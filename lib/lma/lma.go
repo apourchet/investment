@@ -8,7 +8,7 @@ type Lma struct {
 }
 
 func NewLma(n int) *Lma {
-	return &Lma{n, 0, make([]float64, n)}
+	return &Lma{n, 0, make([]float64, n), 0}
 }
 
 func (l *Lma) Step(val float64) {
