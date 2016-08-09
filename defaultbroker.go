@@ -120,7 +120,6 @@ func (b *DefaultBroker) ParseQuote(record []string) *Quote {
 	if err != nil {
 		return nil
 	}
-	// TODO
-	// q.Time = date.ParseDate(record[0])
+	q.Time = utils.ParseDateString(record)
 	return q
 }
