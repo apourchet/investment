@@ -12,7 +12,7 @@ func TradeQuote(a *Account, q *Quote, units int32, side int) {
 	if side == SIDE_BUY {
 		Trade(a, q.InstrumentId, units, q.Ask, SIDE_BUY)
 	} else {
-		Trade(a, q.InstrumentId, units, q.Bid, SIDE_BUY)
+		Trade(a, q.InstrumentId, units, q.Bid, SIDE_SELL)
 	}
 }
 
