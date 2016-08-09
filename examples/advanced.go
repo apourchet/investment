@@ -12,13 +12,6 @@ import (
 	pb "github.com/apourchet/investment/protos"
 )
 
-<<<<<<< HEAD
-=======
-var (
-	totalTrades = 0
-)
-
->>>>>>> 0bfe2de13ca151cc3cb5f3346e083363c8c2baaa
 func quickOrder(units int32, side string) *pb.OrderCreationReq {
 	o := &pb.OrderCreationReq{}
 	o.InstrumentId = "EURUSD"
