@@ -55,6 +55,11 @@ func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
 			position = 0
 			broker.CreateOrder(context.Background(), o)
 		}
+		if ema5.Steps%10000 == 0 {
+			req := &pb.AccountInfoReq{}
+			resp, _ := broker.GetAccountInfo(context.Background(), req)
+			fmt.Println(resp.Info.Balance)
+		}
 	}
 
 }
@@ -93,7 +98,7 @@ func main() {
 	go startTrader(mine)
 	invt.SimulateDataStream(broker, datafile, milliStep)
 
-	time.Sleep(time.Millisecond) // Let last changes kick in
+	time.Sleep(time.Millisecond * 500) // Let last changes kick in
 	req := &pb.AccountInfoReq{}
 	resp, _ := broker.GetAccountInfo(context.Background(), req)
 	fmt.Println(resp.Info.Balance)
