@@ -11,18 +11,42 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/apourchet/investment"
+	"github.com/apourchet/investment/lib/ema"
 	pb "github.com/apourchet/investment/protos"
 )
 
 type Strat func(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient)
 
 func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
+	ema5 := ema.NewEma(ema.AlphaFromN(5))
+	ema30 := ema.NewEma(ema.AlphaFromN(30))
+	position := 0 // ema5 < ema30
 	for {
 		q, err := stream.Recv()
 		if err == io.EOF || q == nil {
 			return
 		}
-
+		ema5.Step(q.Bid)
+		ema30.Step(q.Bid)
+		if position == 0 && ema5.Value > ema30.Value {
+			o := &pb.OrderCreationReq{}
+			o.InstrumentId = "EURUSD"
+			o.Type = invt.TYPE_MARKET
+			o.Side = invt.StringOfSide(invt.SIDE_BUY)
+			o.Units = 100
+			position = 1
+			broker.CreateOrder(context.Background(), o)
+			fmt.Println("BUYING")
+		} else if position == 1 && ema5.Value < ema30.Value {
+			o := &pb.OrderCreationReq{}
+			o.InstrumentId = "EURUSD"
+			o.Type = invt.TYPE_MARKET
+			o.Side = invt.StringOfSide(invt.SIDE_SELL)
+			o.Units = 100
+			position = 0
+			broker.CreateOrder(context.Background(), o)
+			fmt.Println("SELLING")
+		}
 	}
 }
 

@@ -68,7 +68,7 @@ func main() {
 	go broker.Start()
 	time.Sleep(time.Millisecond * 50)
 
-	milliStep := 80
+	milliStep := 20
 	go startTrader(DownUpCSVStrategy)
 	invt.SimulateDataStream(broker, "examples/data/updown.csv", milliStep)
 

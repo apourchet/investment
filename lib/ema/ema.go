@@ -12,7 +12,7 @@ func NewEma(alpha float64) *Ema {
 
 func AlphaFromN(N int) float64 {
 	n := float64(N)
-	return 1. / (n + 2.)
+	return 2. / (n + 1.)
 }
 
 func (e *Ema) Step(val float64) float64 {
