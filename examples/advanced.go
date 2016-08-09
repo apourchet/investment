@@ -4,18 +4,13 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 
 	"golang.org/x/net/context"
-
-	"google.golang.org/grpc"
 
 	"github.com/apourchet/investment"
 	"github.com/apourchet/investment/lib/ema"
 	pb "github.com/apourchet/investment/protos"
 )
-
-type Strat func(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient)
 
 var (
 	totalTrades = 0
@@ -70,26 +65,6 @@ func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
 
 }
 
-func startTrader(strat Strat) {
-	conn, err := grpc.Dial(":8080", grpc.WithInsecure())
-	exitOnError(err)
-	defer conn.Close()
-
-	broker := pb.NewBrokerClient(conn)
-	req := &pb.StreamPricesReq{}
-	req.InstrumentId = "EURUSD"
-	stream, err := broker.StreamPrices(context.Background(), req)
-	exitOnError(err)
-
-	strat(broker, stream)
-}
-
-func exitOnError(err error) {
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s", err.Error())
-	}
-}
-
 func main() {
 	datafile := "examples/data/largish.csv"
 	if len(os.Args) >= 2 {
@@ -97,15 +72,5 @@ func main() {
 	}
 
 	broker := invt.NewDefaultBroker()
-	go broker.Start()
-	time.Sleep(time.Millisecond * 50)
-
-	milliStep := 1
-	go startTrader(mine)
-	invt.SimulateDataStream(broker, datafile, milliStep)
-
-	time.Sleep(time.Millisecond * 500) // Let last changes kick in
-	req := &pb.AccountInfoReq{}
-	resp, _ := broker.GetAccountInfo(context.Background(), req)
-	fmt.Println(resp.Info.Balance)
+	invt.SimulateTradingScenario(broker, mine, datafile)
 }
