@@ -48,8 +48,9 @@ func (b *DefaultBroker) StreamPrices(req *pb.StreamPricesReq, stream pb.Broker_S
 			b.broadcaster.Deregister(rid)
 			return nil
 		} else {
-			q := qdata.(*pb.Quote)
-			err := stream.Send(q)
+			q := qdata.(*Quote)
+			qp := q.Proto()
+			err := stream.Send(qp)
 			if err != nil {
 				b.broadcaster.Deregister(rid)
 				return err
@@ -64,7 +65,10 @@ func (b *DefaultBroker) GetAccounts(context.Context, *pb.AccountListReq) (*pb.Ac
 }
 
 func (b *DefaultBroker) GetAccountInfo(context.Context, *pb.AccountInfoReq) (*pb.AccountInfoResp, error) {
-	return nil, nil
+	resp := &pb.AccountInfoResp{}
+	resp.Info = &pb.AccountInfo{}
+	resp.Info.Balance = b.account.Balance
+	return resp, nil
 }
 
 func (b *DefaultBroker) GetOrders(context.Context, *pb.OrderListReq) (*pb.OrderListResp, error) {
@@ -75,7 +79,10 @@ func (b *DefaultBroker) CreateOrder(ctx context.Context, req *pb.OrderCreationRe
 	if req.Type == "market" {
 		TradeQuote(b.account, b.lastquote, req.Units, ParseSide(req.Side))
 	}
-	return nil, nil
+	resp := &pb.OrderCreationResp{}
+	resp.InstrumentId = req.InstrumentId
+	// TODO
+	return resp, nil
 }
 
 func (b *DefaultBroker) OnQuote(q *Quote) {

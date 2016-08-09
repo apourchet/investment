@@ -14,9 +14,9 @@ import (
 	pb "github.com/apourchet/investment/protos"
 )
 
-type Strat func(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClient)
+type Strat func(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient)
 
-func DownUpCSVStrategy(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClient) {
+func DownUpCSVStrategy(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
 	for {
 		q, err := stream.Recv()
 		if err == io.EOF || q == nil {
@@ -24,19 +24,19 @@ func DownUpCSVStrategy(broker pb.BrokerClient, stream pb.Broker_StreamQuotesClie
 		}
 		if int(q.Bid) == 1 {
 			// Buy a bunch
-			o := &pb.OrderCreation{}
-			o.Instrument = pb.InstrumentID_EURUSD
-			o.Type = pb.OrderType_MARKET
-			o.Side = pb.OrderSide_BUY
+			o := &pb.OrderCreationReq{}
+			o.InstrumentId = "EURUSD"
+			o.Type = invt.TYPE_MARKET
+			o.Side = invt.StringOfSide(invt.SIDE_BUY)
 			o.Units = 100
 			broker.CreateOrder(context.Background(), o)
 		}
 		if int(q.Bid) == 5 {
 			// Sell a bunch
-			o := &pb.OrderCreation{}
-			o.Instrument = pb.InstrumentID_EURUSD
-			o.Type = pb.OrderType_MARKET
-			o.Side = pb.OrderSide_SELL
+			o := &pb.OrderCreationReq{}
+			o.InstrumentId = "EURUSD"
+			o.Type = invt.TYPE_MARKET
+			o.Side = invt.StringOfSide(invt.SIDE_SELL)
 			o.Units = 100
 			broker.CreateOrder(context.Background(), o)
 		}
@@ -49,8 +49,9 @@ func startTrader(strat Strat) {
 	defer conn.Close()
 
 	broker := pb.NewBrokerClient(conn)
-	iid := &pb.InstrumentID{pb.InstrumentID_EURUSD}
-	stream, err := broker.StreamQuotes(context.Background(), iid)
+	req := &pb.StreamPricesReq{}
+	req.InstrumentId = "EURUSD"
+	stream, err := broker.StreamPrices(context.Background(), req)
 	exitOnError(err)
 
 	strat(broker, stream)
@@ -67,10 +68,14 @@ func main() {
 	go broker.Start()
 	time.Sleep(time.Millisecond * 50)
 
-	milliStep := 200
+	milliStep := 80
 	go startTrader(DownUpCSVStrategy)
-	invt.SimulateDataStream(broker, "tests/testdata/updown.csv", milliStep)
+	invt.SimulateDataStream(broker, "examples/data/updown.csv", milliStep)
 
 	go startTrader(DownUpCSVStrategy)
-	invt.SimulateDataStream(broker, "tests/testdata/downup.csv", milliStep)
+	invt.SimulateDataStream(broker, "examples/data/downup.csv", milliStep)
+
+	req := &pb.AccountInfoReq{}
+	resp, _ := broker.GetAccountInfo(context.Background(), req)
+	fmt.Println(resp.Info.Balance)
 }
