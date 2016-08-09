@@ -18,8 +18,8 @@ import (
 type Strat func(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient)
 
 func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
-	ema5 := ema.NewEma(ema.AlphaFromN(5))
-	ema30 := ema.NewEma(ema.AlphaFromN(150))
+	ema5 := ema.NewEma(ema.AlphaFromN(8))
+	ema30 := ema.NewEma(ema.AlphaFromN(34))
 	position := 0 // ema5 < ema30
 	for {
 		q, err := stream.Recv()
@@ -30,7 +30,7 @@ func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
 				o.InstrumentId = "EURUSD"
 				o.Type = invt.TYPE_MARKET
 				o.Side = invt.StringOfSide(invt.SIDE_SELL)
-				o.Units = 100
+				o.Units = 3000
 				position = 1
 				broker.CreateOrder(context.Background(), o)
 			}
@@ -43,7 +43,7 @@ func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
 			o.InstrumentId = "EURUSD"
 			o.Type = invt.TYPE_MARKET
 			o.Side = invt.StringOfSide(invt.SIDE_BUY)
-			o.Units = 100
+			o.Units = 3000
 			position = 1
 			broker.CreateOrder(context.Background(), o)
 		} else if position == 1 && ema5.Value < ema30.Value {
@@ -51,7 +51,7 @@ func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
 			o.InstrumentId = "EURUSD"
 			o.Type = invt.TYPE_MARKET
 			o.Side = invt.StringOfSide(invt.SIDE_SELL)
-			o.Units = 100
+			o.Units = 3000
 			position = 0
 			broker.CreateOrder(context.Background(), o)
 		}
@@ -80,13 +80,18 @@ func exitOnError(err error) {
 }
 
 func main() {
+	datafile := "examples/data/largish.csv"
+	if len(os.Args) >= 2 {
+		datafile = os.Args[1]
+	}
+
 	broker := invt.NewDefaultBroker()
 	go broker.Start()
 	time.Sleep(time.Millisecond * 50)
 
 	milliStep := 1
 	go startTrader(mine)
-	invt.SimulateDataStream(broker, "examples/data/medium.csv", milliStep)
+	invt.SimulateDataStream(broker, datafile, milliStep)
 
 	time.Sleep(time.Millisecond) // Let last changes kick in
 	req := &pb.AccountInfoReq{}
