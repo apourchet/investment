@@ -19,7 +19,7 @@ func (e *Ema) Step(val float64) float64 {
 	if e.Steps == 0 {
 		e.Value = val
 	} else {
-		e.Value = e.Value*e.Alpha + val*(1-e.Alpha)
+		e.Value = val*e.Alpha + e.Value*(1-e.Alpha)
 	}
 	e.Steps += 1
 	return e.Value

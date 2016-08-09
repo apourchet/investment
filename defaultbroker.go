@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	bc "github.com/apourchet/investment/lib/broadcaster"
+	"github.com/apourchet/investment/lib/utils"
 	pb "github.com/apourchet/investment/protos"
 	"golang.org/x/net/context"
 )
@@ -116,10 +117,11 @@ func (b *DefaultBroker) ParseQuote(record []string) *Quote {
 		return nil
 	}
 
-	q.Ask, err = strconv.ParseFloat(record[4], 64)
+	q.Ask, err = strconv.ParseFloat(record[2], 64)
+	q.Ask += 0.00025 // Adjust for arbitrary spread
 	if err != nil {
 		return nil
 	}
-	q.Time = utils.ParseDateString(record)
+	q.Time, _ = utils.ParseDateString(record)
 	return q
 }
