@@ -69,6 +69,7 @@ func (b *DefaultBroker) GetAccountInfo(context.Context, *pb.AccountInfoReq) (*pb
 	resp := &pb.AccountInfoResp{}
 	resp.Info = &pb.AccountInfo{}
 	resp.Info.Balance = b.account.Balance
+	resp.Info.MarginAvail = b.account.MarginAvailable(b.getQuoteContext())
 	return resp, nil
 }
 
@@ -125,4 +126,9 @@ func (b *DefaultBroker) ParseQuote(record []string) *Quote {
 	}
 	q.Time, _ = utils.ParseDateString(record)
 	return q
+}
+
+func (b *DefaultBroker) getQuoteContext() *QuoteContext {
+
+	return &QuoteContext{ONLY_INSTRUMENTID: b.lastquote}
 }

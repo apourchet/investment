@@ -9,16 +9,10 @@ import (
 
 	"github.com/apourchet/investment"
 	"github.com/apourchet/investment/lib/ema"
+	"github.com/apourchet/investment/lib/lma"
 	pb "github.com/apourchet/investment/protos"
 )
 
-<<<<<<< HEAD
-=======
-var (
-	totalTrades = 0
-)
-
->>>>>>> 0bfe2de13ca151cc3cb5f3346e083363c8c2baaa
 func quickOrder(units int32, side string) *pb.OrderCreationReq {
 	o := &pb.OrderCreationReq{}
 	o.InstrumentId = "EURUSD"
@@ -31,6 +25,8 @@ func quickOrder(units int32, side string) *pb.OrderCreationReq {
 func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
 	ema5 := ema.NewEma(ema.AlphaFromN(8))
 	ema30 := ema.NewEma(ema.AlphaFromN(50))
+	lma := lma.NewLma(144)
+
 	position := 0 // ema5 < ema30
 	for {
 		q, err := stream.Recv()
@@ -46,20 +42,24 @@ func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
 		if ema5.Steps%10000 == 0 {
 			req := &pb.AccountInfoReq{}
 			resp, _ := broker.GetAccountInfo(context.Background(), req)
-			fmt.Println(resp.Info.Balance)
+			fmt.Println(resp.Info.MarginAvail)
 		}
 
 		ema5.Step(q.Bid)
 		ema30.Step(q.Bid)
 
 		if position == 0 && ema5.Value > ema30.Value {
-			o := quickOrder(3000, invt.StringOfSide(invt.SIDE_BUY))
-			position = 1
-			broker.CreateOrder(context.Background(), o)
+			if q.Ask < ema5.Value+0.0001 {
+				o := quickOrder(3000, invt.StringOfSide(invt.SIDE_BUY))
+				position = 1
+				broker.CreateOrder(context.Background(), o)
+			}
 		} else if position == 1 && ema5.Value < ema30.Value {
-			o := quickOrder(3000, invt.StringOfSide(invt.SIDE_SELL))
-			position = 0
-			broker.CreateOrder(context.Background(), o)
+			if q.Bid > ema5.Value-0.0001 {
+				o := quickOrder(3000, invt.StringOfSide(invt.SIDE_SELL))
+				position = 0
+				broker.CreateOrder(context.Background(), o)
+			}
 		}
 
 	}
