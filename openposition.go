@@ -21,6 +21,13 @@ func ParseSide(sideStr string) int {
 	return SIDE_SELL
 }
 
+func StringOfSide(side int) string {
+	if side == SIDE_BUY {
+		return "buy"
+	}
+	return "sell"
+}
+
 func (pos *OpenPosition) FloatUnits() float64 {
 	return float64(pos.Units)
 }
