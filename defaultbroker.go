@@ -92,6 +92,7 @@ func (b *DefaultBroker) OnQuote(q *Quote) {
 }
 
 func (b *DefaultBroker) OnEnd() {
+	fmt.Printf("%+v\n", b.account.Stats)
 	b.broadcaster.Emit(nil)
 }
 

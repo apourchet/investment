@@ -26,14 +26,16 @@ func Trade(a *Account, instrumentId string, units int32, price float64, side int
 }
 
 func closePosition(a *Account, pos *OpenPosition, price float64) {
-	a.Balance += pos.Value() // Gain value of position
+	a.Balance += pos.Value()                     // Gain value of position
+	pl := pos.FloatUnits() * (price - pos.Price) // Gain delta
 	if pos.Side == SIDE_BUY {
-		a.Balance += pos.FloatUnits() * (price - pos.Price)    // Gain delta
-		a.RealizedPl += pos.FloatUnits() * (price - pos.Price) // Gain delta
+		a.Balance += pl
+		a.RealizedPl += pl
 	} else {
-		a.Balance += pos.FloatUnits() * (pos.Price - price)    // Gain delta
-		a.RealizedPl += pos.FloatUnits() * (pos.Price - price) // Gain delta
+		a.Balance -= pl
+		a.RealizedPl -= pl
 	}
+	a.Stats.AddTrade(pl)
 }
 
 func mergePositions(a *Account, from, to *OpenPosition) {

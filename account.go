@@ -10,6 +10,7 @@ type Account struct {
 	MarginRate    float64
 	OpenTrades    interface{}
 	OpenOrders    interface{}
+	Stats         *Stats
 }
 
 func NewAccount(balance float64) *Account {
@@ -17,6 +18,7 @@ func NewAccount(balance float64) *Account {
 	a.Balance = balance
 	a.MarginRate = 0.02
 	a.OpenPositions = make(map[string]*OpenPosition)
+	a.Stats = NewStats()
 	return a
 }
 
