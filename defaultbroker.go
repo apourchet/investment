@@ -40,7 +40,7 @@ func (b *DefaultBroker) StreamPrices(req *pb.StreamPricesReq, stream pb.Broker_S
 	if req.InstrumentId != ONLY_INSTRUMENTID {
 		return fmt.Errorf("Unsupported InstrumentID. Only support " + "EURUSD")
 	}
-	cb := make(chan interface{}, 10)
+	cb := make(chan interface{})
 	rid := b.broadcaster.Register(cb)
 	for qdata := range cb {
 		if qdata == nil {
@@ -117,27 +117,3 @@ func (b *DefaultBroker) ParseQuote(record []string) *Quote {
 	// q.Time = date.ParseDate(record[0])
 	return q
 }
-
-//func (b *DefaultBroker) GetPrices(ctx context.Context, il *pb.InstrumentIDList) (ls *pb.QuoteList, err error) {
-//	for _, iid := range il.Value {
-//		if iid.Id == ONLY_INSTRUMENTID {
-//			ls.Value = append(ls.Value, b.lastquote)
-//		}
-//	}
-//	return ls, err
-//}
-//func (b *DefaultBroker) CreateOrder(ctx context.Context, oc *pb.OrderCreation) (*pb.OrderCreationResponse, error) {
-//	ocr := &pb.OrderCreationResponse{}
-//	ocr.Time = time.Now().String()
-//	ocr.Order = &pb.Order{}
-//	ocr.Order.Instrument = oc.Instrument
-//	ocr.Order.Side = oc.Side
-//	ocr.Order.Units = oc.Units
-//	ocr.Order.Price = b.lastquote.Bid
-//	ocr.Order.Id = "1234"
-//	ocr.Order.Type = pb.OrderType_MARKET
-//
-//	b.account.ProcessOrder(ocr.Order)
-//	fmt.Printf("Balance: %f\n", b.account.Balance)
-//	return ocr, nil
-//}

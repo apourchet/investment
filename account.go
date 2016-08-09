@@ -22,15 +22,16 @@ func NewAccount(balance float64) *Account {
 
 func (a *Account) MarginUsed() float64 {
 	// marginrate * exposure
+	// TODO
 	return a.Balance
 }
 
 func (a *Account) MarginAvailable(qc *QuoteContext) float64 {
 	// balance - marginrate * exposure
-	return a.Balance - a.MarginRate*a.CalculateExposure(qc)
+	return a.Balance - a.MarginRate*a.Exposure(qc)
 }
 
-func (a *Account) CalculateExposure(qc *QuoteContext) float64 {
+func (a *Account) Exposure(qc *QuoteContext) float64 {
 	exposure := 0.
 	for _, o := range a.OpenPositions {
 		if o.Side == SIDE_BUY {

@@ -4,6 +4,7 @@ import (
 	"math/rand"
 )
 
+// TODO Sync safe
 type Broadcaster struct {
 	receivers map[ReceiverID]chan interface{}
 }
