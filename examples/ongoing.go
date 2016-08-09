@@ -22,8 +22,8 @@ func quickOrder(units int32, side string) *pb.OrderCreationReq {
 }
 
 func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
-	ema5 := ema.NewEma(ema.AlphaFromN(8))
-	ema30 := ema.NewEma(ema.AlphaFromN(50))
+	ema5 := ema.NewEma(ema.AlphaFromN(30))
+	lma := ema.NewEma(400)
 
 	position := 0 // ema5 < ema30
 	for {
@@ -37,22 +37,22 @@ func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
 			return
 		}
 
-		if ema5.Steps%10000 == 0 {
+		if ema5.Steps%2000 == 0 {
 			req := &pb.AccountInfoReq{}
 			resp, _ := broker.GetAccountInfo(context.Background(), req)
 			fmt.Println(resp.Info.MarginAvail)
 		}
 
 		ema5.Step(q.Bid)
-		ema30.Step(q.Bid)
+		lma.Step(q.Bid)
 
-		if position == 0 && ema5.Value > ema30.Value {
+		if position == 0 && ema5.Value > lma.Value {
 			if q.Ask < ema5.Value+0.0001 {
 				o := quickOrder(3000, invt.StringOfSide(invt.SIDE_BUY))
 				position = 1
 				broker.CreateOrder(context.Background(), o)
 			}
-		} else if position == 1 && ema5.Value < ema30.Value {
+		} else if position == 1 && ema5.Value < lma.Value {
 			if q.Bid > ema5.Value-0.0001 {
 				o := quickOrder(3000, invt.StringOfSide(invt.SIDE_SELL))
 				position = 0
