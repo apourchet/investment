@@ -37,31 +37,33 @@ type Loggable interface {
 	ToLogItem() *Item
 }
 
-var (
-	mainLogger *serverLogger
-)
-
-func NewLogger(name, filename string) Logger {
-	fh, err := os.Open(filename)
-	if err != nil {
-		return nil
+func NewLogger(name, filename string) (*serverLogger, error) {
+	if _, err := os.Stat(filename); err == nil {
+		err = os.Rename(filename, filename+".old")
 	}
-	return &serverLogger{name, filename, fh}
+	fh, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0667)
+	if err != nil {
+		return nil, err
+	}
+	return &serverLogger{name, filename, fh}, nil
 }
 
-func NewLoggerClient(url string) Logger {
+func NewLoggerClient(url string) *clientLogger {
 	return &clientLogger{url}
 }
 
 func (l *serverLogger) Log(item Loggable) error {
 	i := item.ToLogItem()
-	fmt.Fprintf(l.fh, "(%s) [%s]: %s", i.Date.String(), i.Tag, i.Message)
+	fmt.Fprintf(l.fh, "(%s) [%s]: %s\n", i.Date.Format(time.UnixDate), i.Tag, i.Message)
 	return nil
 }
 
 func (c *clientLogger) Log(item Loggable) error {
 	i := item.ToLogItem()
-	v := url.Values{"date": {i.Date.String()},
+	if i == nil {
+		i = &Item{time.Now(), "ERROR", "Could not convert to log item."}
+	}
+	v := url.Values{"date": {i.Date.Format(time.UnixDate)},
 		"tag":     {i.Tag},
 		"message": {i.Message}}
 
@@ -82,28 +84,30 @@ func (i *Item) ToLogItem() *Item {
 	return i
 }
 
-func LogHandler(rw *http.ResponseWriter, req http.Request) {
-	if req.Method == http.MethodGet {
-		// TODO
-	} else if req.Method == http.MethodPost {
-		req.ParseForm()
-		m := req.PostForm
-		dateStr := m["date"][0]
-		dateArr := strings.Split(dateStr, ",")
-		date, err := utils.ParseDate(dateArr)
-		if err != nil {
-			fmt.Fprintf(rw, err.Error())
-			return
+func (l *serverLogger) LogHandler() func(http.ResponseWriter, *http.Request) {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		if req.Method == http.MethodGet {
+			// TODO
+		} else if req.Method == http.MethodPost {
+			req.ParseForm()
+			m := req.PostForm
+			dateStr := m["date"][0]
+			dateArr := strings.Split(dateStr, ",")
+			date, err := utils.ParseDate(dateArr)
+			if err != nil {
+				fmt.Fprintf(rw, err.Error())
+				return
+			}
+			item := &Item{date, m["tag"][0], m["message"][0]}
+			l.Log(item)
 		}
-		item := &Item{date, m["tag"][0], m["message"][0]}
-		mainLogger.Log(item)
 	}
 }
 
 func StartServer(port int, name, filename string) {
-	mainLogger = NewLogger(name, filename)
-	http.HandleFunc("/log", LogHandler)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	l, err := NewLogger(name, filename)
+	http.HandleFunc("/log", l.LogHandler())
+	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		fmt.Println("Error:", err.Error())
 		os.Exit(1)

@@ -15,15 +15,15 @@ import (
 	"golang.org/x/net/context"
 )
 
-const (
-	ONLY_INSTRUMENTID = "EURUSD"
-)
-
 type DefaultBroker struct {
 	broadcaster *bc.Broadcaster
 	lastquote   *Quote
 	account     *Account
 }
+
+const (
+	ONLY_INSTRUMENTID = "EURUSD"
+)
 
 func NewDefaultBroker() *DefaultBroker {
 	return &DefaultBroker{bc.NewBroadcaster(), nil, NewAccount(10000)}
@@ -129,6 +129,5 @@ func (b *DefaultBroker) ParseQuote(record []string) *Quote {
 }
 
 func (b *DefaultBroker) getQuoteContext() *QuoteContext {
-
 	return &QuoteContext{ONLY_INSTRUMENTID: b.lastquote}
 }
