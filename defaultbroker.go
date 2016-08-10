@@ -119,8 +119,7 @@ func (b *DefaultBroker) ParseQuote(record []string) *Quote {
 		return nil
 	}
 
-	q.Ask, err = strconv.ParseFloat(record[2], 64)
-	q.Ask += 0.00025 // Adjust for arbitrary spread
+	q.Ask, err = strconv.ParseFloat(record[3], 64)
 	if err != nil {
 		return nil
 	}
