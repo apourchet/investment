@@ -7,24 +7,25 @@ import (
 	"net/url"
 	"os"
 	"time"
-
-	"strings"
-
-	"github.com/apourchet/investment/lib/utils"
 )
 
 type Logger interface {
 	Log(Loggable) error
 }
 
-type serverLogger struct {
-	Name     string
+type localLogger struct {
 	Filename string
 	fh       *os.File
 }
 
 type clientLogger struct {
-	Url string
+	LogId string
+	Url   string
+}
+
+type serverLogger struct {
+	Dirname string
+	Loggers map[string]*localLogger
 }
 
 type Item struct {
@@ -37,7 +38,16 @@ type Loggable interface {
 	ToLogItem() *Item
 }
 
-func NewLogger(name, filename string) (*serverLogger, error) {
+const (
+	DEFAULT_LOGGERID = "unnamed"
+)
+
+func newServerLogger(dirname string) *serverLogger {
+	l := &serverLogger{dirname, make(map[string]*localLogger)}
+	return l
+}
+
+func NewLocalLogger(filename string) (*localLogger, error) {
 	if _, err := os.Stat(filename); err == nil {
 		err = os.Rename(filename, filename+".old")
 	}
@@ -45,16 +55,17 @@ func NewLogger(name, filename string) (*serverLogger, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &serverLogger{name, filename, fh}, nil
+	return &localLogger{filename, fh}, nil
 }
 
 func NewLoggerClient(url string) *clientLogger {
-	return &clientLogger{url}
+	return &clientLogger{DEFAULT_LOGGERID, url}
 }
 
-func (l *serverLogger) Log(item Loggable) error {
-	i := item.ToLogItem()
-	fmt.Fprintf(l.fh, "(%s) [%s]: %s\n", i.Date.Format(time.UnixDate), i.Tag, i.Message)
+func (l *localLogger) Log(data Loggable) error {
+	item := data.ToLogItem()
+	fmt.Fprintf(l.fh, "(%s) [%s]: %s\n",
+		item.Date.Format(time.UnixDate), item.Tag, item.Message)
 	return nil
 }
 
@@ -63,7 +74,9 @@ func (c *clientLogger) Log(item Loggable) error {
 	if i == nil {
 		i = &Item{time.Now(), "ERROR", "Could not convert to log item."}
 	}
-	v := url.Values{"date": {i.Date.Format(time.UnixDate)},
+	v := url.Values{
+		"id":      {c.LogId},
+		"date":    {i.Date.Format(time.UnixDate)},
 		"tag":     {i.Tag},
 		"message": {i.Message}}
 
@@ -72,42 +85,80 @@ func (c *clientLogger) Log(item Loggable) error {
 		return err
 	}
 	defer resp.Body.Close()
-	_, err = ioutil.ReadAll(resp.Body)
+	idData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
+	if c.LogId == DEFAULT_LOGGERID {
+		// TODO error response case
+		c.LogId = string(idData)
+		fmt.Println("See logs at: " + c.Url + "/logs?id=" + c.LogId)
+		return c.Log(item)
+	}
 	return nil
+}
 
+func (l *serverLogger) LogHandler() func(http.ResponseWriter, *http.Request) {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		if req.Method == http.MethodGet {
+			fmt.Fprintf(rw, "OK")
+			// TODO
+		} else if req.Method == http.MethodPost {
+			item := parseItemFromRequest(req)
+
+			id, ok := req.PostForm["id"]
+			if !ok {
+				id = []string{DEFAULT_LOGGERID}
+			}
+			lid := id[0]
+			if lid == DEFAULT_LOGGERID {
+				// TODO generate new id
+				lid = "1234"
+				fmt.Fprintf(rw, "%s", lid)
+				return
+			}
+
+			if ll, ok := l.Loggers[lid]; ok {
+				ll.Log(item)
+				return
+			}
+
+			ll, err := NewLocalLogger(l.Dirname + "/" + lid)
+			if err != nil {
+				// TODO error response
+				return
+			}
+			l.Loggers[lid] = ll
+			ll.Log(item)
+		}
+	}
+}
+
+func parseItemFromRequest(req *http.Request) *Item {
+	req.ParseForm()
+	m := req.PostForm
+
+	item := &Item{}
+	if d, ok := m["date"]; ok {
+		item.Date, _ = time.Parse(time.UnixDate, d[0])
+	}
+	if t, ok := m["tag"]; ok {
+		item.Tag = t[0]
+	}
+	if msg, ok := m["tag"]; ok {
+		item.Message = msg[0]
+	}
+	return item
 }
 
 func (i *Item) ToLogItem() *Item {
 	return i
 }
 
-func (l *serverLogger) LogHandler() func(http.ResponseWriter, *http.Request) {
-	return func(rw http.ResponseWriter, req *http.Request) {
-		if req.Method == http.MethodGet {
-			// TODO
-		} else if req.Method == http.MethodPost {
-			req.ParseForm()
-			m := req.PostForm
-			dateStr := m["date"][0]
-			dateArr := strings.Split(dateStr, ",")
-			date, err := utils.ParseDate(dateArr)
-			if err != nil {
-				fmt.Fprintf(rw, err.Error())
-				return
-			}
-			item := &Item{date, m["tag"][0], m["message"][0]}
-			l.Log(item)
-		}
-	}
-}
-
-func StartServer(port int, name, filename string) {
-	l, err := NewLogger(name, filename)
+func StartServer(port int, dirname string) {
+	l := newServerLogger(dirname)
 	http.HandleFunc("/log", l.LogHandler())
-	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		fmt.Println("Error:", err.Error())
 		os.Exit(1)

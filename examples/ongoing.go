@@ -7,6 +7,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"time"
+
 	"github.com/apourchet/investment"
 	"github.com/apourchet/investment/lib/ema"
 	tl "github.com/apourchet/investment/lib/tradelogger"
@@ -70,12 +72,12 @@ func main() {
 		datafile = os.Args[1]
 	}
 
-	logger, err := tl.NewLogger("main", "/tmp/ongoing.log")
-	if err != nil {
-		fmt.Printf("Could not open log: %v", err)
-		os.Exit(1)
-	}
+	go tl.StartServer(1026, "logs/")
+	time.Sleep(time.Millisecond * 50)
+
+	logger := tl.NewLoggerClient("http://localhost:1026")
 	invt.AddLogger(logger)
+
 	broker := invt.NewDefaultBroker()
 	invt.SimulateTradingScenario(broker, mine, datafile)
 }
