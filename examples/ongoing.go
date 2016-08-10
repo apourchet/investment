@@ -9,6 +9,7 @@ import (
 
 	"github.com/apourchet/investment"
 	"github.com/apourchet/investment/lib/ema"
+	tl "github.com/apourchet/investment/lib/tradelogger"
 	pb "github.com/apourchet/investment/protos"
 )
 
@@ -69,6 +70,12 @@ func main() {
 		datafile = os.Args[1]
 	}
 
+	logger, err := tl.NewLogger("main", "/tmp/ongoing.log")
+	if err != nil {
+		fmt.Printf("Could not open log: %v", err)
+		os.Exit(1)
+	}
+	invt.AddLogger(logger)
 	broker := invt.NewDefaultBroker()
 	invt.SimulateTradingScenario(broker, mine, datafile)
 }

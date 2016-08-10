@@ -1,5 +1,7 @@
 package invt
 
+import "time"
+
 func Buy(a *Account, instrumentId string, units int32, price float64) {
 	Trade(a, instrumentId, units, price, SIDE_BUY)
 }
@@ -36,6 +38,7 @@ func closePosition(a *Account, pos *OpenPosition, price float64) {
 		a.RealizedPl -= pl
 	}
 	a.Stats.AddTrade(pl)
+	Log(time.Now(), TAG_CLOSEPOSITION, "")
 }
 
 func mergePositions(a *Account, from, to *OpenPosition) {
