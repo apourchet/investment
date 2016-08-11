@@ -15,6 +15,10 @@ import (
 	pb "github.com/apourchet/investment/protos"
 )
 
+var (
+	logger tl.Logger
+)
+
 func quickOrder(units int32, side string) *pb.OrderCreationReq {
 	o := &pb.OrderCreationReq{}
 	o.InstrumentId = "EURUSD"
@@ -47,6 +51,7 @@ func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
 		}
 
 		ema5.Step(q.Bid)
+		logger.Log(&tl.Item{time.Now(), "EMA5", fmt.Sprintf("%f", ema5.Value)})
 		lma.Step(q.Bid)
 
 		if position == 0 && ema5.Value > lma.Value {
@@ -75,7 +80,7 @@ func main() {
 	go tl.StartServer(1026, "logs/")
 	time.Sleep(time.Millisecond * 50)
 
-	logger := tl.NewLoggerClient("http://localhost:1026")
+	logger = tl.NewLoggerClient("http://localhost:1026")
 	invt.AddLogger(logger)
 
 	broker := invt.NewDefaultBroker()

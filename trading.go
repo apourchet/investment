@@ -38,7 +38,7 @@ func closePosition(a *Account, pos *OpenPosition, price float64) {
 		a.RealizedPl -= pl
 	}
 	a.Stats.AddTrade(pl)
-	Log(time.Now(), TAG_CLOSEPOSITION, "")
+	Log(time.Now(), TAG_CLOSEPOSITION, "Position closed.")
 }
 
 func mergePositions(a *Account, from, to *OpenPosition) {
