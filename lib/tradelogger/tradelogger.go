@@ -2,7 +2,6 @@ package tradelogger
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -24,11 +23,6 @@ type clientLogger struct {
 	Url   string
 }
 
-type serverLogger struct {
-	Dirname string
-	Loggers map[string]*localLogger
-}
-
 type Item struct {
 	Date    time.Time `json:"date"`
 	Tag     string    `json:"tag"`
@@ -42,11 +36,6 @@ type Loggable interface {
 const (
 	DEFAULT_LOGGERID = "unnamed"
 )
-
-func newServerLogger(dirname string) *serverLogger {
-	l := &serverLogger{dirname, make(map[string]*localLogger)}
-	return l
-}
 
 func NewLocalLogger(filename string) (*localLogger, error) {
 	if _, err := os.Stat(filename); err == nil {
@@ -65,8 +54,7 @@ func NewLoggerClient(url string) *clientLogger {
 
 func (l *localLogger) Log(data Loggable) error {
 	item := data.ToLogItem()
-	fmt.Fprintf(l.fh, "(%s) [%s]: %s\n",
-		item.Date.Format(time.UnixDate), item.Tag, item.Message)
+	fmt.Fprintln(l.fh, item.String())
 	return nil
 }
 
@@ -95,103 +83,23 @@ func (c *clientLogger) Log(item Loggable) error {
 		c.LogId = string(idData)
 		fmt.Println("See logs at: " + c.Url + "/log?lid=" + c.LogId)
 		fmt.Println("See logs at: " + c.Url + "/raw?lid=" + c.LogId)
-		fmt.Println("See logs at: " + c.Url + "/anim?lid=" + c.LogId)
-		fmt.Println("See logs at: " + c.Url + "/live?lid=" + c.LogId)
 		return c.Log(i)
 	}
 	return nil
-}
-
-func (l *serverLogger) LogHandler() func(http.ResponseWriter, *http.Request) {
-	return func(rw http.ResponseWriter, req *http.Request) {
-		if req.Method == http.MethodPost {
-			item := parseItemFromRequest(req)
-
-			id, ok := req.PostForm["lid"]
-			if !ok {
-				id = []string{DEFAULT_LOGGERID}
-			}
-			lid := id[0]
-			if lid == DEFAULT_LOGGERID {
-				lid = getNewLogId()
-				fmt.Fprintf(rw, "%s", lid)
-				return
-			}
-
-			if ll, ok := l.Loggers[lid]; ok {
-				ll.Log(item)
-				return
-			}
-
-			ll, err := NewLocalLogger(l.Dirname + "/" + lid)
-			if err != nil {
-				// TODO error response
-				return
-			}
-			l.Loggers[lid] = ll
-			ll.Log(item)
-		} else {
-			// Serve
-		}
-	}
-}
-
-// Logs are too big to serve as a chunk
-func (l *serverLogger) GetRaw() func(http.ResponseWriter, *http.Request) {
-	return func(rw http.ResponseWriter, req *http.Request) {
-		lid := req.URL.Query().Get("lid")
-		filename := l.Dirname + "/" + lid
-		fh, err := os.OpenFile(filename, os.O_RDONLY, 0677)
-		if err != nil {
-			http.Error(rw, "Could not read the file", http.StatusInternalServerError)
-			return
-		}
-		io.Copy(rw, fh)
-	}
-}
-
-func (l *serverLogger) GetAnimated() func(http.ResponseWriter, *http.Request) {
-	return func(rw http.ResponseWriter, req *http.Request) {
-
-	}
-}
-
-func (l *serverLogger) GetLive() func(http.ResponseWriter, *http.Request) {
-	return func(rw http.ResponseWriter, req *http.Request) {
-
-	}
-}
-
-func getNewLogId() string {
-	return fmt.Sprintf("%d", time.Now().UnixNano())
-}
-
-func parseItemFromRequest(req *http.Request) *Item {
-	req.ParseForm()
-	m := req.PostForm
-
-	item := &Item{}
-	if d, ok := m["date"]; ok {
-		item.Date, _ = time.Parse(time.UnixDate, d[0])
-	}
-	if t, ok := m["tag"]; ok {
-		item.Tag = t[0]
-	}
-	if msg, ok := m["msg"]; ok {
-		item.Message = msg[0]
-	}
-	return item
 }
 
 func (i *Item) ToLogItem() *Item {
 	return i
 }
 
+func (i *Item) String() string {
+	return fmt.Sprintf("(%s) [%s]: %s\n", i.Date.Format(time.UnixDate), i.Tag, i.Message)
+}
+
 func StartServer(port int, dirname string) {
 	l := newServerLogger(dirname)
 	http.HandleFunc("/log", l.LogHandler())
 	http.HandleFunc("/raw", l.GetRaw())
-	http.HandleFunc("/anim", l.GetAnimated())
 	http.HandleFunc("/live", l.GetLive())
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
