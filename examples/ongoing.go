@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/apourchet/investment"
-	"github.com/apourchet/investment/lib/ema"
 	tl "github.com/apourchet/investment/lib/tradelogger"
 	pb "github.com/apourchet/investment/protos"
 )
@@ -28,61 +27,61 @@ func quickOrder(units int32, side string) *pb.OrderCreationReq {
 	return o
 }
 
-func mine(broker pb.BrokerClient, stream pb.Broker_StreamPricesClient) {
-	ema5 := ema.NewEma(ema.AlphaFromN(30))
-	lma := ema.NewEma(400)
+func getStream(broker pb.BrokerClient) pb.Broker_StreamCandleClient {
+	req := &pb.StreamCandleReq{&pb.AuthToken{}, "EURUSD"}
+	stream, err := broker.StreamCandle(context.Background(), req)
+	if err != nil {
+		fmt.Println("Error: " + err.Error())
+		os.Exit(1)
+	}
+	return stream
+}
 
-	position := 0 // ema5 < ema30
+func mine(def *invt.DefaultBroker) {
+	fmt.Println("Trader started")
+	broker := def.GetClient()
+	stream := getStream(broker)
+
+	steps := 0 // ema5 < ema30
 	for {
-		q, err := stream.Recv()
-		if err == io.EOF || q == nil {
-			if position == 1 {
-				// Close position
-				o := quickOrder(3000, invt.StringOfSide(invt.SIDE_SELL))
-				broker.CreateOrder(context.Background(), o)
-			}
+		c, err := stream.Recv()
+		if err == io.EOF || c == nil {
+			fmt.Println("Candle stream has ended.")
 			return
 		}
 
-		if ema5.Steps%2000 == 0 {
+		if steps%20 == 0 {
 			req := &pb.AccountInfoReq{}
 			resp, _ := broker.GetAccountInfo(context.Background(), req)
 			fmt.Println(resp.Info.MarginAvail)
 		}
 
-		ema5.Step(q.Bid)
-		logger.Log(&tl.Item{time.Now(), "EMA5", fmt.Sprintf("%f", ema5.Value)})
-		lma.Step(q.Bid)
-
-		if position == 0 && ema5.Value > lma.Value {
-			if q.Ask < ema5.Value+0.0001 {
-				o := quickOrder(3000, invt.StringOfSide(invt.SIDE_BUY))
-				position = 1
-				broker.CreateOrder(context.Background(), o)
-			}
-		} else if position == 1 && ema5.Value < lma.Value {
-			if q.Bid > ema5.Value-0.0001 {
-				o := quickOrder(3000, invt.StringOfSide(invt.SIDE_SELL))
-				position = 0
-				broker.CreateOrder(context.Background(), o)
-			}
+		if c.Close-c.Low > (c.High-c.Close)*4 {
+			o := quickOrder(3000, invt.StringOfSide(invt.SIDE_BUY))
+			broker.CreateOrder(context.Background(), o)
+		} else if (c.Close-c.Low)*4 < c.High-c.Close {
+			o := quickOrder(3000, invt.StringOfSide(invt.SIDE_SELL))
+			broker.CreateOrder(context.Background(), o)
 		}
-
+		steps++
 	}
 }
 
 func main() {
+	go tl.StartServer(1026, "logs/")
+	time.Sleep(time.Millisecond * 50)
+
+	logger = tl.NewLoggerClient("http://localhost:1026")
+
 	datafile := "examples/data/largish.csv"
 	if len(os.Args) >= 2 {
 		datafile = os.Args[1]
 	}
 
-	go tl.StartServer(1026, "logs/")
+	simulator := invt.NewSimulator(invt.DATAFORMAT_CANDLE, datafile, 10)
+	broker := invt.NewDefaultBroker(1027)
+	go simulator.SimulateDataStream(broker)
+
 	time.Sleep(time.Millisecond * 50)
-
-	logger = tl.NewLoggerClient("http://localhost:1026")
-	invt.AddLogger(logger)
-
-	broker := invt.NewDefaultBroker()
-	invt.SimulateTradingScenario(broker, mine, datafile)
+	mine(broker)
 }

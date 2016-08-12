@@ -1,40 +1,58 @@
 package invt
 
 import (
-	"net"
-
 	"google.golang.org/grpc"
 
 	"fmt"
 
-	"strconv"
+	"net"
 
 	bc "github.com/apourchet/investment/lib/broadcaster"
-	"github.com/apourchet/investment/lib/utils"
 	pb "github.com/apourchet/investment/protos"
 	"golang.org/x/net/context"
 )
 
 type DefaultBroker struct {
-	broadcaster *bc.Broadcaster
-	lastquote   *Quote
-	account     *Account
+	port       int
+	quoteBc    *bc.Broadcaster
+	candleBc   *bc.Broadcaster
+	lastquote  *Quote
+	lastCandle *Candle
+	account    *Account
 }
 
 const (
 	ONLY_INSTRUMENTID = "EURUSD"
 )
 
-func NewDefaultBroker() *DefaultBroker {
-	return &DefaultBroker{bc.NewBroadcaster(), nil, NewAccount(10000)}
+func NewDefaultBroker(port int) *DefaultBroker {
+	b := &DefaultBroker{port, bc.NewBroadcaster(), bc.NewBroadcaster(), nil, nil, NewAccount(10000)}
+	return b
 }
 
-func (b *DefaultBroker) GetInstrumentList(context.Context, *pb.InstrumentListReq) (*pb.InstrumentListResp, error) {
-	return nil, nil
+func (b *DefaultBroker) GetClient() pb.BrokerClient {
+	conn, err := grpc.Dial(fmt.Sprintf(":%d", b.port), grpc.WithInsecure())
+	if err != nil {
+		return nil
+	}
+	return pb.NewBrokerClient(conn)
 }
 
-func (b *DefaultBroker) GetPrices(context.Context, *pb.PriceListReq) (*pb.PriceListResp, error) {
-	return nil, nil
+func (b *DefaultBroker) Start() error {
+	fmt.Println("Starting defaultbroker")
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", b.port))
+	if err != nil {
+		fmt.Println("ERROR: " + err.Error())
+		return err
+	}
+
+	server := grpc.NewServer()
+	pb.RegisterBrokerServer(server, b)
+	err = server.Serve(lis)
+	if err != nil {
+		fmt.Println("ERROR: " + err.Error())
+	}
+	return err
 }
 
 func (b *DefaultBroker) StreamPrices(req *pb.StreamPricesReq, stream pb.Broker_StreamPricesServer) error {
@@ -42,18 +60,18 @@ func (b *DefaultBroker) StreamPrices(req *pb.StreamPricesReq, stream pb.Broker_S
 		return fmt.Errorf("Unsupported InstrumentID. Only support " + "EURUSD")
 	}
 	cb := make(chan interface{})
-	rid := b.broadcaster.Register(cb)
+	rid := b.quoteBc.Register(cb)
 	for qdata := range cb {
 		if qdata == nil {
 			stream.Send(nil)
-			b.broadcaster.Deregister(rid)
+			b.quoteBc.Deregister(rid)
 			return nil
 		} else {
 			q := qdata.(*Quote)
 			qp := q.Proto()
 			err := stream.Send(qp)
 			if err != nil {
-				b.broadcaster.Deregister(rid)
+				b.quoteBc.Deregister(rid)
 				return err
 			}
 		}
@@ -61,7 +79,47 @@ func (b *DefaultBroker) StreamPrices(req *pb.StreamPricesReq, stream pb.Broker_S
 	return nil
 }
 
+func (b *DefaultBroker) StreamCandle(req *pb.StreamCandleReq, stream pb.Broker_StreamCandleServer) error {
+	if req.InstrumentId != ONLY_INSTRUMENTID {
+		return fmt.Errorf("Unsupported InstrumentID. Only support " + "EURUSD")
+	}
+	cb := make(chan interface{})
+	rid := b.candleBc.Register(cb)
+	for cdata := range cb {
+		if cdata == nil {
+			stream.Send(nil)
+			b.candleBc.Deregister(rid)
+			return nil
+		} else {
+			c := cdata.(*Candle)
+			cp := c.Proto()
+			err := stream.Send(cp)
+			if err != nil {
+				b.candleBc.Deregister(rid)
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (b *DefaultBroker) GetInstrumentList(context.Context, *pb.InstrumentListReq) (*pb.InstrumentListResp, error) {
+	// TODO
+	return nil, nil
+}
+
+func (b *DefaultBroker) GetPrices(context.Context, *pb.PriceListReq) (*pb.PriceListResp, error) {
+	// TODO
+	return nil, nil
+}
+
+func (b *DefaultBroker) GetLastCandle(ctx context.Context, in *pb.LastCandleReq) (*pb.LastCandleResp, error) {
+	// TODO
+	return nil, nil
+}
+
 func (b *DefaultBroker) GetAccounts(context.Context, *pb.AccountListReq) (*pb.AccountListResp, error) {
+	// TODO
 	return nil, nil
 }
 
@@ -74,6 +132,7 @@ func (b *DefaultBroker) GetAccountInfo(context.Context, *pb.AccountInfoReq) (*pb
 }
 
 func (b *DefaultBroker) GetOrders(context.Context, *pb.OrderListReq) (*pb.OrderListResp, error) {
+	// TODO
 	return nil, nil
 }
 
@@ -87,45 +146,26 @@ func (b *DefaultBroker) CreateOrder(ctx context.Context, req *pb.OrderCreationRe
 	return resp, nil
 }
 
-func (b *DefaultBroker) OnQuote(q *Quote) {
-	b.lastquote = q
-	b.broadcaster.Emit(q)
+func (b *DefaultBroker) OnData(record []string, format DataFormat) {
+	if format == DATAFORMAT_QUOTE {
+		q := parseQuote(record)
+		b.lastquote = q
+		b.quoteBc.Emit(q)
+	} else if format == DATAFORMAT_CANDLE {
+		c := parseCandle(record)
+		b.lastCandle = c
+		b.lastquote = &Quote{}
+		b.lastquote.Bid = c.Close
+		b.lastquote.Ask = c.Close + 0.00025
+		b.lastquote.InstrumentId = c.InstrumentId
+		b.candleBc.Emit(c)
+	}
 }
 
 func (b *DefaultBroker) OnEnd() {
 	fmt.Printf("%+v\n", b.account.Stats)
-	b.broadcaster.Emit(nil)
-}
-
-func (b *DefaultBroker) Start() error {
-	lis, err := net.Listen("tcp", ":8080")
-	if err != nil {
-		return err
-	}
-
-	server := grpc.NewServer()
-	pb.RegisterBrokerServer(server, b)
-
-	server.Serve(lis)
-	return nil
-}
-
-func (b *DefaultBroker) ParseQuote(record []string) *Quote {
-	q := &Quote{}
-	q.InstrumentId = "EURUSD"
-	v, err := strconv.ParseFloat(record[2], 64)
-	q.Bid = v
-	if err != nil {
-		return nil
-	}
-
-	q.Ask, err = strconv.ParseFloat(record[2], 64)
-	q.Ask += 0.00025 // Adjust for arbitrary spread
-	if err != nil {
-		return nil
-	}
-	q.Time, _ = utils.ParseDateString(record)
-	return q
+	b.quoteBc.Emit(nil)
+	b.candleBc.Emit(nil)
 }
 
 func (b *DefaultBroker) getQuoteContext() *QuoteContext {
