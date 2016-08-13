@@ -12,10 +12,13 @@ type OpenPosition struct {
 const (
 	SIDE_BUY  = iota
 	SIDE_SELL = iota
+
+	SIDE_BUY_STR  = "buy"
+	SIDE_SELL_STR = "sell"
 )
 
 func ParseSide(sideStr string) int {
-	if sideStr == "buy" {
+	if sideStr == SIDE_BUY_STR {
 		return SIDE_BUY
 	}
 	return SIDE_SELL
@@ -23,9 +26,9 @@ func ParseSide(sideStr string) int {
 
 func StringOfSide(side int) string {
 	if side == SIDE_BUY {
-		return "buy"
+		return SIDE_BUY_STR
 	}
-	return "sell"
+	return SIDE_SELL_STR
 }
 
 func (pos *OpenPosition) FloatUnits() float64 {

@@ -1,6 +1,8 @@
 package invt
 
 import (
+	"log"
+
 	"google.golang.org/grpc"
 
 	"fmt"
@@ -164,7 +166,7 @@ func (b *DefaultBroker) OnData(record []string, format DataFormat) {
 }
 
 func (b *DefaultBroker) OnEnd() {
-	fmt.Printf("%+v\n", b.account.Stats)
+	log.Printf("%+v\n", b.account.Stats)
 	b.quoteBc.Emit(nil)
 	b.candleBc.Emit(nil)
 }
