@@ -22,28 +22,25 @@ func NewAccount(balance float64) *Account {
 	return a
 }
 
-func (a *Account) MarginUsed() float64 {
+func (a *Account) MarginUsed(qc *QuoteContext) float64 {
 	// marginrate * exposure
 	// TODO
-	return a.Balance
+	return a.MarginRate * a.Exposure(qc)
 }
 
 func (a *Account) MarginAvailable(qc *QuoteContext) float64 {
 	// balance - marginrate * exposure
 	// TODO make sure this is right
-	return a.Balance - a.MarginRate*a.Exposure(qc)
+	return a.Balance - a.MarginUsed(qc)
 }
 
 // Returns the total exposure that the account is under.
-// TODO Fix this
+// Basically how much money you would recover if you sold all open positions
+// TODO This is approximation that doesnt change with QuoteContext
 func (a *Account) Exposure(qc *QuoteContext) float64 {
 	exposure := 0.
 	for _, o := range a.OpenPositions {
-		if o.Side == SIDE_BUY {
-			exposure += qc.Get(o.InstrumentId).Ask * o.FloatUnits()
-		} else {
-			exposure += o.FloatUnits() / qc.Get(o.InstrumentId).Bid
-		}
+		exposure += o.Value()
 	}
 	return exposure
 }

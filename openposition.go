@@ -10,8 +10,8 @@ type OpenPosition struct {
 }
 
 const (
-	SIDE_BUY  = iota
-	SIDE_SELL = iota
+	SIDE_BUY  = 1
+	SIDE_SELL = -1
 
 	SIDE_BUY_STR  = "buy"
 	SIDE_SELL_STR = "sell"

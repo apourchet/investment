@@ -105,6 +105,29 @@ func (b *DefaultBroker) StreamCandle(req *pb.StreamCandleReq, stream pb.Broker_S
 	return nil
 }
 
+func (b *DefaultBroker) CreateOrder(ctx context.Context, req *pb.OrderCreationReq) (*pb.OrderCreationResp, error) {
+	if req.Type == "market" {
+		TradeQuote(b.account, b.lastquote, req.Units, ParseSide(req.Side))
+	}
+	resp := &pb.OrderCreationResp{}
+	resp.InstrumentId = req.InstrumentId
+	resp.Price = b.lastquote.Price(req.Side)
+	// TODO
+	return resp, nil
+}
+
+func (b *DefaultBroker) GetAccountInfo(context.Context, *pb.AccountInfoReq) (*pb.AccountInfoResp, error) {
+	resp := &pb.AccountInfoResp{}
+	resp.Info = &pb.AccountInfo{}
+	resp.Info.Currency = b.account.Currency
+	resp.Info.Balance = b.account.Balance
+	resp.Info.MarginAvail = b.account.MarginAvailable(b.getQuoteContext())
+	resp.Info.MarginUsed = b.account.MarginUsed(b.getQuoteContext())
+	resp.Info.RealizedPl = b.account.RealizedPl
+	// TODO more info
+	return resp, nil
+}
+
 func (b *DefaultBroker) GetInstrumentList(context.Context, *pb.InstrumentListReq) (*pb.InstrumentListResp, error) {
 	// TODO
 	return nil, nil
@@ -125,28 +148,9 @@ func (b *DefaultBroker) GetAccounts(context.Context, *pb.AccountListReq) (*pb.Ac
 	return nil, nil
 }
 
-func (b *DefaultBroker) GetAccountInfo(context.Context, *pb.AccountInfoReq) (*pb.AccountInfoResp, error) {
-	resp := &pb.AccountInfoResp{}
-	resp.Info = &pb.AccountInfo{}
-	resp.Info.Balance = b.account.Balance
-	resp.Info.MarginAvail = b.account.MarginAvailable(b.getQuoteContext())
-	// TODO more info
-	return resp, nil
-}
-
 func (b *DefaultBroker) GetOrders(context.Context, *pb.OrderListReq) (*pb.OrderListResp, error) {
 	// TODO
 	return nil, nil
-}
-
-func (b *DefaultBroker) CreateOrder(ctx context.Context, req *pb.OrderCreationReq) (*pb.OrderCreationResp, error) {
-	if req.Type == "market" {
-		TradeQuote(b.account, b.lastquote, req.Units, ParseSide(req.Side))
-	}
-	resp := &pb.OrderCreationResp{}
-	resp.InstrumentId = req.InstrumentId
-	// TODO
-	return resp, nil
 }
 
 func (b *DefaultBroker) OnData(record []string, format DataFormat) {
