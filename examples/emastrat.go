@@ -9,6 +9,8 @@ import (
 
 	"time"
 
+	"log"
+
 	"github.com/apourchet/investment"
 	"github.com/apourchet/investment/lib/ema"
 	"github.com/apourchet/investment/lib/influx-session"
@@ -55,17 +57,20 @@ func mine(def *invt.DefaultBroker) {
 		if ema5.Value < ema30.Value && ema5.ComputeNext(c.Close) > ema30.ComputeNext(c.Close) {
 			o := quickOrder(10, invt.SIDE_BUY_STR)
 			broker.CreateOrder(context.Background(), o)
-			session.Write("order_buy", o, c.Timestamp)
+			err = session.Write("order.buy", o, c.Timestamp)
 		} else if ema5.Value > ema30.Value && ema5.ComputeNext(c.Close) < ema30.ComputeNext(c.Close) {
 			o := quickOrder(10, invt.SIDE_SELL_STR)
 			broker.CreateOrder(context.Background(), o)
-			session.Write("order_sell", o, c.Timestamp)
+			err = session.Write("order.sell", o, c.Timestamp)
+		}
+		if err != nil {
+			log.Fatal("Error writing to influxdb:", err)
 		}
 		ema5.Step(c.Close)
 		ema30.Step(c.Close)
 		session.Write("candle", c, c.Timestamp)
-		session.Write("ema5", ema5, c.Timestamp)
-		session.Write("ema30", ema30, c.Timestamp)
+		session.Write("ema.5", ema5, c.Timestamp)
+		session.Write("ema.30", ema30, c.Timestamp)
 	}
 }
 

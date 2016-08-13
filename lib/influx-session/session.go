@@ -14,12 +14,13 @@ import (
 )
 
 type Session struct {
-	Id       string
-	Address  string
-	Username string
-	Password string
-	Database string
-	client   ix.Client
+	Id        string
+	Address   string
+	Username  string
+	Password  string
+	Database  string
+	Precision string
+	client    ix.Client
 }
 
 const (
@@ -42,6 +43,7 @@ func NewSession(address string, username string, password string, database strin
 	s.Username = username
 	s.Password = password
 	s.Database = database
+	s.Precision = DEFAULT_PRECISION
 	log.Printf("New Influx-Session %s", s.Id)
 	return s
 }
@@ -55,7 +57,7 @@ func (s *Session) Write(measurement string, input interface{}, date time.Time) e
 }
 
 func (s *Session) point(measurement string, input interface{}, date time.Time) (*ix.Point, error) {
-	tags := map[string]string{"session_id": s.Id}
+	tags := map[string]string{"session.id": s.Id}
 	fields := structs.Map(input)
 	return ix.NewPoint(measurement, tags, fields, date)
 }
@@ -64,7 +66,7 @@ func (s *Session) writePoint(pt *ix.Point) error {
 	once.Do(s.getInfluxClient)
 	bp, err := ix.NewBatchPoints(ix.BatchPointsConfig{
 		Database:  s.Database,
-		Precision: "s",
+		Precision: s.Precision,
 	})
 	if err != nil {
 		return err
