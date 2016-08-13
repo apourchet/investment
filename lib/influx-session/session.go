@@ -9,7 +9,7 @@ import (
 
 	"time"
 
-	structs "github.com/fatih/structs"
+	"github.com/fatih/structs"
 	ix "github.com/influxdata/influxdb/client/v2"
 )
 
@@ -23,8 +23,9 @@ type Session struct {
 }
 
 const (
-	RAND_ID_SIZE       = 10
-	DEFAULT_ADDRESS    = "http://localhost:8086"
+	RAND_ID_SIZE    = 10
+	DEFAULT_ADDRESS = "http://localhost:8086"
+
 	DEFAULT_BATCH_SIZE = 1   // TODO
 	DEFAULT_PRECISION  = "s" // TODO
 )
@@ -45,19 +46,26 @@ func NewSession(address string, username string, password string, database strin
 	return s
 }
 
-func (s *Session) WritePoint(measurement string, input interface{}, date time.Time) error {
+func (s *Session) Write(measurement string, input interface{}, date time.Time) error {
+	pt, err := s.point(measurement, input, date)
+	if err != nil {
+		return err
+	}
+	return s.writePoint(pt)
+}
+
+func (s *Session) point(measurement string, input interface{}, date time.Time) (*ix.Point, error) {
+	tags := map[string]string{"session_id": s.Id}
+	fields := structs.Map(input)
+	return ix.NewPoint(measurement, tags, fields, date)
+}
+
+func (s *Session) writePoint(pt *ix.Point) error {
 	once.Do(s.getInfluxClient)
 	bp, err := ix.NewBatchPoints(ix.BatchPointsConfig{
 		Database:  s.Database,
 		Precision: "s",
 	})
-	if err != nil {
-		return err
-	}
-	tags := map[string]string{"session_id": s.Id}
-	fields := structs.Map(input)
-	pt, err := ix.NewPoint(measurement, tags, fields, date)
-
 	if err != nil {
 		return err
 	}

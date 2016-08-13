@@ -12,12 +12,10 @@ import (
 	"github.com/apourchet/investment"
 	"github.com/apourchet/investment/lib/influx-session"
 	pb "github.com/apourchet/investment/protos"
-	influx "github.com/influxdata/influxdb/client/v2"
 )
 
 var (
-	session  *ix_session.Session
-	ixClient influx.Client
+	session *ix_session.Session
 )
 
 func quickOrder(units int32, side string) *pb.OrderCreationReq {
@@ -39,6 +37,7 @@ func getStream(broker pb.BrokerClient) pb.Broker_StreamCandleClient {
 	return stream
 }
 
+// Create a point and add to batch
 func mine(def *invt.DefaultBroker) {
 	fmt.Println("Trader started")
 	broker := def.GetClient()
@@ -57,17 +56,17 @@ func mine(def *invt.DefaultBroker) {
 			req := &pb.AccountInfoReq{}
 			resp, _ := broker.GetAccountInfo(context.Background(), req)
 			fmt.Println(resp.Info.MarginAvail)
-			session.WritePoint("candle", c, c.Timestamp)
+			session.Write("candle", c, c.Timestamp)
 		}
 
 		if c.Close-c.Low > (c.High-c.Close)*4 {
 			o := quickOrder(3000, invt.StringOfSide(invt.SIDE_BUY))
 			broker.CreateOrder(context.Background(), o)
-			session.WritePoint("order_buy", o, c.Timestamp)
+			session.Write("order_buy", o, c.Timestamp)
 		} else if (c.Close-c.Low)*4 < c.High-c.Close {
 			o := quickOrder(3000, invt.StringOfSide(invt.SIDE_SELL))
 			broker.CreateOrder(context.Background(), o)
-			session.WritePoint("order_sell", o, c.Timestamp)
+			session.Write("order_sell", o, c.Timestamp)
 		}
 		steps++
 	}

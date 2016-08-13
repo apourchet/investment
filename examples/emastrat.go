@@ -55,17 +55,17 @@ func mine(def *invt.DefaultBroker) {
 		if ema5.Value < ema30.Value && ema5.ComputeNext(c.Close) > ema30.ComputeNext(c.Close) {
 			o := quickOrder(10, invt.SIDE_BUY_STR)
 			broker.CreateOrder(context.Background(), o)
-			session.WritePoint("order_buy", o, c.Timestamp)
+			session.Write("order_buy", o, c.Timestamp)
 		} else if ema5.Value > ema30.Value && ema5.ComputeNext(c.Close) < ema30.ComputeNext(c.Close) {
 			o := quickOrder(10, invt.SIDE_SELL_STR)
 			broker.CreateOrder(context.Background(), o)
-			session.WritePoint("order_sell", o, c.Timestamp)
+			session.Write("order_sell", o, c.Timestamp)
 		}
 		ema5.Step(c.Close)
 		ema30.Step(c.Close)
-		session.WritePoint("candle", c, c.Timestamp)
-		session.WritePoint("ema5", ema5, c.Timestamp)
-		session.WritePoint("ema30", ema30, c.Timestamp)
+		session.Write("candle", c, c.Timestamp)
+		session.Write("ema5", ema5, c.Timestamp)
+		session.Write("ema30", ema30, c.Timestamp)
 	}
 }
 
