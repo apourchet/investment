@@ -1,5 +1,5 @@
 
-PROTOC_LOCATION=/Users/antoine/Downloads/protoc3/bin/protoc
+PROTOC_LOCATION=$(which protoc)
 
 default: protos
 
