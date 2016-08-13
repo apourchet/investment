@@ -2,10 +2,11 @@ package invt
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io"
 	"os"
 	"time"
+
+	"log"
 
 	pb "github.com/apourchet/investment/protos"
 )
@@ -40,16 +41,16 @@ func (s *Simulator) SimulateDataStream(sim Simulatable) error {
 
 	in, err := os.Open(s.Filename)
 	if err != nil {
-		fmt.Println("Could not open data file: " + err.Error())
+		log.Fatalln("Could not open data file:", err)
 		return err
 	}
 
-	fmt.Println("Simulating: " + s.Filename)
+	log.Println("Simulating: " + s.Filename)
 	reader := csv.NewReader(in)
 	for {
 		record, err := reader.Read()
 		if err == io.EOF {
-			fmt.Println("Simulation Ended")
+			log.Println("Simulation Ended")
 			sim.OnEnd()
 			break
 		}

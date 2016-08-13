@@ -9,7 +9,10 @@ import (
 
 	"time"
 
+	"log"
+
 	"github.com/apourchet/investment"
+	"github.com/apourchet/investment/lib/ema"
 	"github.com/apourchet/investment/lib/influx-session"
 	pb "github.com/apourchet/investment/protos"
 )
@@ -37,13 +40,13 @@ func getStream(broker pb.BrokerClient) pb.Broker_StreamCandleClient {
 	return stream
 }
 
-// Create a point and add to batch
 func mine(def *invt.DefaultBroker) {
 	fmt.Println("Trader started")
 	broker := def.GetClient()
 	stream := getStream(broker)
 
-	steps := 0
+	ema5 := ema.NewEma(ema.AlphaFromN(5))
+	ema30 := ema.NewEma(ema.AlphaFromN(30))
 	for {
 		c1, err := stream.Recv()
 		if err == io.EOF || c1 == nil {
@@ -51,24 +54,23 @@ func mine(def *invt.DefaultBroker) {
 			return
 		}
 		c := invt.CandleFromProto(c1)
-
-		if steps%20 == 0 {
-			req := &pb.AccountInfoReq{}
-			resp, _ := broker.GetAccountInfo(context.Background(), req)
-			fmt.Println(resp.Info.MarginAvail)
-			session.Write("candle", c, c.Timestamp)
-		}
-
-		if c.Close-c.Low > (c.High-c.Close)*4 {
-			o := quickOrder(3000, invt.StringOfSide(invt.SIDE_BUY))
+		if ema5.Value < ema30.Value && ema5.ComputeNext(c.Close) > ema30.ComputeNext(c.Close) {
+			o := quickOrder(10, invt.SIDE_BUY_STR)
 			broker.CreateOrder(context.Background(), o)
-			session.Write("order_buy", o, c.Timestamp)
-		} else if (c.Close-c.Low)*4 < c.High-c.Close {
-			o := quickOrder(3000, invt.StringOfSide(invt.SIDE_SELL))
+			err = session.Write("order.buy", o, c.Timestamp)
+		} else if ema5.Value > ema30.Value && ema5.ComputeNext(c.Close) < ema30.ComputeNext(c.Close) {
+			o := quickOrder(10, invt.SIDE_SELL_STR)
 			broker.CreateOrder(context.Background(), o)
-			session.Write("order_sell", o, c.Timestamp)
+			err = session.Write("order.sell", o, c.Timestamp)
 		}
-		steps++
+		if err != nil {
+			log.Fatal("Error writing to influxdb:", err)
+		}
+		ema5.Step(c.Close)
+		ema30.Step(c.Close)
+		session.Write("candle", c, c.Timestamp)
+		session.Write("ema.5", ema5, c.Timestamp)
+		session.Write("ema.30", ema30, c.Timestamp)
 	}
 }
 

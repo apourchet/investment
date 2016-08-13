@@ -24,3 +24,10 @@ func (e *Ema) Step(val float64) float64 {
 	e.Steps += 1
 	return e.Value
 }
+
+func (e *Ema) ComputeNext(val float64) float64 {
+	if e.Steps == 0 {
+		return val
+	}
+	return val*e.Alpha + e.Value*(1-e.Alpha)
+}
