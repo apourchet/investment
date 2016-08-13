@@ -1,5 +1,5 @@
 
-PROTOC_LOCATION=$(which protoc)
+PROTOC_LOCATION=`which protoc`
 
 default: protos
 
