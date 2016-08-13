@@ -3,13 +3,27 @@ package invt
 import (
 	"strconv"
 
+	"time"
+
 	"github.com/apourchet/investment/lib/utils"
 	"github.com/apourchet/investment/protos"
 )
 
-type Quote protos.Quote
+type Candle struct {
+	InstrumentId string
+	Timestamp    time.Time
+	Open         float64
+	High         float64
+	Low          float64
+	Close        float64
+}
 
-type Candle protos.Candle
+type Quote struct {
+	InstrumentId string
+	Timestamp    time.Time
+	Ask          float64
+	Bid          float64
+}
 
 type QuoteContext map[string]*Quote
 
@@ -22,8 +36,7 @@ func (q *Quote) Proto() *protos.Quote {
 	q1.InstrumentId = q.InstrumentId
 	q1.Ask = q.Ask
 	q1.Bid = q.Bid
-	q1.Status = q.Status
-	q1.Time = q.Time
+	q1.Time = q.Timestamp.Format(time.RFC3339)
 	return q1
 }
 
@@ -34,14 +47,32 @@ func (c *Candle) Proto() *protos.Candle {
 	c1.High = c.High
 	c1.Low = c.Low
 	c1.Open = c.Open
-	c1.Status = c.Status
-	c1.Time = c.Time
+	c1.Time = c.Timestamp.Format(time.RFC3339)
 	return c1
+}
+
+func CandleFromProto(c *protos.Candle) *Candle {
+	c1 := &Candle{}
+	c1.High = c.High
+	c1.Low = c.Low
+	c1.Open = c.Open
+	c1.Close = c.Close
+	c1.InstrumentId = c.InstrumentId
+	c1.Timestamp, _ = time.Parse(time.RFC3339, c.Time)
+	return c1
+}
+
+func QuoteFromProto(q *protos.Quote) *Quote {
+	q1 := &Quote{}
+	q1.Ask = q.Ask
+	q1.Bid = q.Bid
+	q1.InstrumentId = q.InstrumentId
+	q1.Timestamp, _ = time.Parse(time.RFC3339, q.Time)
+	return q1
 }
 
 func parseCandle(record []string) *Candle {
 	c := &Candle{}
-	c.InstrumentId = "EURUSD"
 	v1, err1 := strconv.ParseFloat(record[2], 64)
 	v2, err2 := strconv.ParseFloat(record[3], 64)
 	v3, err3 := strconv.ParseFloat(record[4], 64)
@@ -51,7 +82,8 @@ func parseCandle(record []string) *Candle {
 		return nil
 	}
 
-	c.Time, _ = utils.ParseDateString(record)
+	c.InstrumentId = "EURUSD"
+	c.Timestamp, _ = utils.ParseDate(record)
 	c.Open = v1
 	c.High = v2
 	c.Low = v3
@@ -59,9 +91,9 @@ func parseCandle(record []string) *Candle {
 	return c
 }
 
-func parseQuote(record []string) *Quote {
+func parseQuote(instrumentId string, record []string) *Quote {
 	q := &Quote{}
-	q.InstrumentId = "EURUSD"
+	q.InstrumentId = instrumentId
 	v, err := strconv.ParseFloat(record[2], 64)
 	q.Bid = v
 	if err != nil {
@@ -69,10 +101,11 @@ func parseQuote(record []string) *Quote {
 	}
 
 	q.Ask, err = strconv.ParseFloat(record[2], 64)
+	// TODO fix this
 	q.Ask += 0.00025 // Adjust for arbitrary spread
 	if err != nil {
 		return nil
 	}
-	q.Time, _ = utils.ParseDateString(record)
+	q.Timestamp, _ = utils.ParseDate(record)
 	return q
 }

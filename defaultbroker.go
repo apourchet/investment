@@ -128,6 +128,7 @@ func (b *DefaultBroker) GetAccountInfo(context.Context, *pb.AccountInfoReq) (*pb
 	resp.Info = &pb.AccountInfo{}
 	resp.Info.Balance = b.account.Balance
 	resp.Info.MarginAvail = b.account.MarginAvailable(b.getQuoteContext())
+	// TODO more info
 	return resp, nil
 }
 
@@ -148,7 +149,7 @@ func (b *DefaultBroker) CreateOrder(ctx context.Context, req *pb.OrderCreationRe
 
 func (b *DefaultBroker) OnData(record []string, format DataFormat) {
 	if format == DATAFORMAT_QUOTE {
-		q := parseQuote(record)
+		q := parseQuote(ONLY_INSTRUMENTID, record)
 		b.lastquote = q
 		b.quoteBc.Emit(q)
 	} else if format == DATAFORMAT_CANDLE {

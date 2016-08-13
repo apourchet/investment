@@ -44,11 +44,12 @@ func mine(def *invt.DefaultBroker) {
 
 	steps := 0 // ema5 < ema30
 	for {
-		c, err := stream.Recv()
-		if err == io.EOF || c == nil {
+		c1, err := stream.Recv()
+		if err == io.EOF || c1 == nil {
 			fmt.Println("Candle stream has ended.")
 			return
 		}
+		c := invt.CandleFromProto(c1)
 
 		if steps%20 == 0 {
 			req := &pb.AccountInfoReq{}
