@@ -10,7 +10,7 @@ import (
 )
 
 func TestMain(t *testing.M) {
-	logger, err := NewLogger("test", "/tmp/testlog")
+	logger, err := NewLocalLogger("/tmp/testlog")
 	if err != nil {
 		fmt.Println("ERROR: " + err.Error())
 	}

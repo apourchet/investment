@@ -7,9 +7,13 @@ service Broker {
 
     rpc GetPrices(PriceListReq) returns (PriceListResp) {}
 
+    rpc GetLastCandle(LastCandleReq) returns (LastCandleResp) {}
+
     // TODO http://developer.oanda.com/rest-live/rates/#retrieveInstrumentHistory
 
     rpc StreamPrices(StreamPricesReq) returns (stream Quote) {}
+
+    rpc StreamCandle(StreamCandleReq) returns (stream Candle) {}
 
     rpc GetAccounts(AccountListReq) returns (AccountListResp) {}
 
@@ -42,7 +46,21 @@ message PriceListResp {
     repeated Quote quotes = 1;
 }
 
+message LastCandleReq {
+    AuthToken token = 1;
+    string instrumentId = 2;
+}
+
+message LastCandleResp {
+    Candle candle = 1;
+}
+
 message StreamPricesReq {
+    AuthToken token = 1;
+    string instrumentId = 2;
+}
+
+message StreamCandleReq {
     AuthToken token = 1;
     string instrumentId = 2;
 }
@@ -96,6 +114,16 @@ message Quote {
     string status = 5;
 }
 
+message Candle {
+    string instrumentId = 1;
+    double open = 2;
+    double high = 3;
+    double low = 4;
+    double close = 5;
+    string time = 6;
+    string status = 7;
+}
+
 message Empty { }
 
 message AuthToken {
@@ -146,125 +174,3 @@ message Order {
     double trailing_stop = 13;
 }
 
-
-//
-//    // ---------------
-//message InstrumentID {
-//    enum ID {
-//        EURUSD = 0;
-//        GBPUSD = 1;
-//    }
-//    ID id = 1;
-//}
-//
-//message InstrumentIDList {
-//    repeated InstrumentID value = 1;
-//}
-//
-//
-//message InstrumentList {
-//    repeated Instrument value = 1;
-//}
-//
-//message AccountID {
-//    string value = 1;
-//}
-//
-//message Account {
-//    string id = 1;
-//    string name = 2;
-//    string currency = 3;
-//    double margin_rate = 4;
-//    double balance = 5;
-//    double unrealized_pl = 6;
-//    double realized_pl = 7;
-//    double margin_used = 8;
-//    double margin_avail = 9;
-//    double open_trades = 10;
-//    double open_orders = 11;
-//}
-//
-//message AccountList {
-//    repeated Account value = 1;
-//}
-//
-//message Quote {
-//    InstrumentID.ID id = 1;
-//    string time = 2;
-//    double bid = 3;
-//    double ask = 4;
-//    string status = 5;
-//}
-//
-//message QuoteList {
-//    repeated Quote value = 1;
-//}
-//
-//enum OrderSide {
-//    BUY = 0;
-//    SELL = 1;
-//}
-//
-//enum OrderType {
-//    LIMIT = 0;
-//    STOP = 1;
-//    MARKET_IF_TOUCHED = 2;
-//    MARKET = 3;
-//}
-//
-//message OrderID {
-//    string value = 1;
-//}
-//
-//message Order {
-//    string id = 1;
-//    InstrumentID.ID instrument = 2;
-//    int32 units = 3;
-//    OrderSide side = 4;
-//    OrderType type = 5; //The type of the order ‘limit’, ‘stop’, ‘marketIfTouched’ or ‘market’
-//    string time = 6;
-//    double price = 7;
-//    double take_profit = 8;
-//    double stop_loss = 9;
-//    string expiry = 10;
-//    double upper_bound = 11;
-//    double lower_bound = 12;
-//    double trailing_stop = 13;
-//}
-//
-//message OrderList {
-//    repeated Order value = 1;
-//}
-//
-//message OrderCreation {
-//    InstrumentID.ID instrument = 1;
-//    int32 units = 2;
-//    OrderSide side = 3;
-//    OrderType type = 4;
-//    string expiry = 5;
-//    double price = 6;
-//    double take_profit = 7;
-//    double stop_loss = 8;
-//    double upper_bound = 9;
-//    double lower_bound = 10;
-//    double trailing_stop = 11;
-//    AccountID account_id = 12;
-//}
-//
-//message OrderChange {
-//    int32 units = 1;
-//    double price = 2;
-//    string expiry = 3;
-//    double take_profit = 4;
-//    double stop_loss = 5;
-//    double upper_bound = 6;
-//    double lower_bound = 7;
-//    double trailing_stop = 8;
-//    AccountID account_id = 9;
-//    OrderID order_id = 10;
-//}
-//
-//message OrderCreationResponse {
-//    string time = 1;
-//    Order order = 2;
-//}
