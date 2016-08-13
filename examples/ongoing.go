@@ -9,13 +9,16 @@ import (
 
 	"time"
 
+	"log"
+
 	"github.com/apourchet/investment"
 	tl "github.com/apourchet/investment/lib/tradelogger"
 	pb "github.com/apourchet/investment/protos"
+	influx "github.com/influxdata/influxdb/client/v2"
 )
 
 var (
-	logger tl.Logger
+	ixClient influx.Client
 )
 
 func quickOrder(units int32, side string) *pb.OrderCreationReq {
@@ -37,6 +40,58 @@ func getStream(broker pb.BrokerClient) pb.Broker_StreamCandleClient {
 	return stream
 }
 
+func getInfluxClient() influx.Client {
+	if ixClient != nil {
+		return ixClient
+	}
+	c, err := influx.NewHTTPClient(influx.HTTPConfig{
+		Addr:     "http://localhost:8086",
+		Username: "investment",
+		Password: "password",
+	})
+	if err != nil {
+		log.Fatalln("ERROR: ", err)
+	}
+	ixClient = c
+	return c
+}
+
+func createBatch() influx.BatchPoints {
+	// Create a new point batch
+	bp, err := influx.NewBatchPoints(influx.BatchPointsConfig{
+		Database:  "testdb",
+		Precision: "s",
+	})
+
+	if err != nil {
+		log.Fatalln("Error: ", err)
+	}
+	return bp
+
+}
+
+func writePoint(candle *pb.Candle) {
+	c := getInfluxClient()
+	bp := createBatch()
+	tags := map[string]string{"trader": "12345"}
+	fields := map[string]interface{}{
+		"low":  candle.Low,
+		"high": candle.High,
+	}
+	pt, err := influx.NewPoint("candle_close", tags, fields, time.Now())
+
+	if err != nil {
+		log.Fatalln("Error: ", err)
+	}
+
+	bp.AddPoint(pt)
+
+	// Write the batch
+	c.Write(bp)
+
+}
+
+// Create a point and add to batch
 func mine(def *invt.DefaultBroker) {
 	fmt.Println("Trader started")
 	broker := def.GetClient()
@@ -54,6 +109,7 @@ func mine(def *invt.DefaultBroker) {
 			req := &pb.AccountInfoReq{}
 			resp, _ := broker.GetAccountInfo(context.Background(), req)
 			fmt.Println(resp.Info.MarginAvail)
+			writePoint(c)
 		}
 
 		if c.Close-c.Low > (c.High-c.Close)*4 {
@@ -70,8 +126,6 @@ func mine(def *invt.DefaultBroker) {
 func main() {
 	go tl.StartServer(1026, "logs/")
 	time.Sleep(time.Millisecond * 50)
-
-	logger = tl.NewLoggerClient("http://localhost:1026")
 
 	datafile := "examples/data/largish.csv"
 	if len(os.Args) >= 2 {
