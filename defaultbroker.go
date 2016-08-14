@@ -41,7 +41,7 @@ func (b *DefaultBroker) GetClient() pb.BrokerClient {
 }
 
 func (b *DefaultBroker) Start() error {
-	fmt.Println("Starting defaultbroker")
+	log.Println("Starting defaultbroker")
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", b.port))
 	if err != nil {
 		fmt.Println("ERROR: " + err.Error())
@@ -170,7 +170,7 @@ func (b *DefaultBroker) OnData(record []string, format DataFormat) {
 }
 
 func (b *DefaultBroker) OnEnd() {
-	log.Printf("%+v\n", b.account.Stats)
+	log.Printf("Account: %+v\n", b.account.Stats)
 	b.quoteBc.Emit(nil)
 	b.candleBc.Emit(nil)
 }

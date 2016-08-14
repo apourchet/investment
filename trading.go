@@ -1,5 +1,7 @@
 package invt
 
+import "log"
+
 func Buy(a *Account, instrumentId string, units int32, price float64) {
 	Trade(a, instrumentId, units, price, SIDE_BUY)
 }
@@ -38,8 +40,9 @@ func mergePositions(a *Account, from, to *OpenPosition) {
 		a.Balance -= from.Value()
 		totalUnits := from.Units + to.Units
 		totalValue := from.Value() + to.Value()
-		avgPrice := totalValue - float64(totalUnits)
+		avgPrice := totalValue / float64(totalUnits)
 
+		log.Printf("Merge position: %f & %f => %f; %d => %d\n", to.Price, from.Price, avgPrice, to.Units, totalUnits)
 		to.Price = avgPrice
 		to.Units = totalUnits
 	} else {
