@@ -37,25 +37,24 @@ func NewSimulator(format DataFormat, filename string, stepmillis int) *Simulator
 }
 
 func (s *Simulator) SimulateDataStream(sim Simulatable) error {
-	go sim.Start()
-
-	in, err := os.Open(s.Filename)
-	if err != nil {
-		log.Fatalln("Could not open data file:", err)
-		return err
-	}
-
-	log.Println("Simulating: " + s.Filename)
-	reader := csv.NewReader(in)
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
-			log.Println("Simulation Ended")
-			sim.OnEnd()
-			break
+	go func() {
+		in, err := os.Open(s.Filename)
+		if err != nil {
+			log.Fatalln("Could not open data file:", err)
 		}
-		sim.OnData(record, s.Format)
-		time.Sleep(time.Millisecond * time.Duration(s.StepMillis))
-	}
-	return nil
+
+		log.Println("Simulating: " + s.Filename)
+		reader := csv.NewReader(in)
+		for {
+			record, err := reader.Read()
+			if err == io.EOF {
+				log.Println("Simulation Ended")
+				sim.OnEnd()
+				break
+			}
+			sim.OnData(record, s.Format)
+			time.Sleep(time.Millisecond * time.Duration(s.StepMillis))
+		}
+	}()
+	return sim.Start()
 }
