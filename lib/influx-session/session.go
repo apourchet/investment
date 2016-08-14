@@ -14,20 +14,23 @@ import (
 )
 
 type Session struct {
-	Id        string
-	Address   string
-	Username  string
-	Password  string
-	Database  string
-	Precision string
-	client    ix.Client
+	Id               string
+	Address          string
+	Username         string
+	Password         string
+	Database         string
+	Precision        string
+	BatchSize        int
+	client           ix.Client
+	currentBatch     ix.BatchPoints
+	currentBatchSize int
 }
 
 const (
 	RAND_ID_SIZE    = 10
 	DEFAULT_ADDRESS = "http://localhost:8086"
 
-	DEFAULT_BATCH_SIZE = 1   // TODO
+	DEFAULT_BATCH_SIZE = 1000
 	DEFAULT_PRECISION  = "s" // TODO
 )
 
@@ -44,6 +47,7 @@ func NewSession(address string, username string, password string, database strin
 	s.Password = password
 	s.Database = database
 	s.Precision = DEFAULT_PRECISION
+	s.BatchSize = DEFAULT_BATCH_SIZE
 	log.Printf("New Influx-Session %s", s.Id)
 	return s
 }
@@ -56,6 +60,12 @@ func (s *Session) Write(measurement string, input interface{}, date time.Time) e
 	return s.writePoint(pt)
 }
 
+func (s *Session) Flush() {
+	if s.currentBatchSize != 0 {
+		s.client.Write(s.currentBatch)
+	}
+}
+
 func (s *Session) point(measurement string, input interface{}, date time.Time) (*ix.Point, error) {
 	tags := map[string]string{"session.id": s.Id}
 	fields := structs.Map(input)
@@ -64,16 +74,24 @@ func (s *Session) point(measurement string, input interface{}, date time.Time) (
 
 func (s *Session) writePoint(pt *ix.Point) error {
 	once.Do(s.getInfluxClient)
-	bp, err := ix.NewBatchPoints(ix.BatchPointsConfig{
-		Database:  s.Database,
-		Precision: s.Precision,
-	})
-	if err != nil {
-		return err
+	if s.currentBatchSize == 0 {
+		bp, err := ix.NewBatchPoints(ix.BatchPointsConfig{
+			Database:  s.Database,
+			Precision: s.Precision,
+		})
+		if err != nil {
+			return err
+		}
+		s.currentBatch = bp
 	}
 
-	bp.AddPoint(pt)
-	return s.client.Write(bp)
+	s.currentBatch.AddPoint(pt)
+	s.currentBatchSize += 1
+	if s.currentBatchSize < s.BatchSize {
+		return nil
+	}
+	s.currentBatchSize = 0
+	return s.client.Write(s.currentBatch)
 }
 
 func (s *Session) getInfluxClient() {
