@@ -71,6 +71,13 @@ func QuoteFromProto(q *protos.Quote) *Quote {
 	return q1
 }
 
+func (q *Quote) Price(side string) float64 {
+	if side == SIDE_BUY_STR {
+		return q.Ask
+	}
+	return q.Bid
+}
+
 func parseCandle(record []string) *Candle {
 	c := &Candle{}
 	v1, err1 := strconv.ParseFloat(record[2], 64)

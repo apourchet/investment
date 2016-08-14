@@ -9,4 +9,5 @@ protos:
 clean:
 	rm logs/*
 
+
 .PHONY: protos

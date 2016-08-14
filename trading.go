@@ -1,6 +1,6 @@
 package invt
 
-import "time"
+import "log"
 
 func Buy(a *Account, instrumentId string, units int32, price float64) {
 	Trade(a, instrumentId, units, price, SIDE_BUY)
@@ -28,17 +28,11 @@ func Trade(a *Account, instrumentId string, units int32, price float64, side int
 }
 
 func closePosition(a *Account, pos *OpenPosition, price float64) {
-	a.Balance += pos.Value()                     // Gain value of position
-	pl := pos.FloatUnits() * (price - pos.Price) // Gain delta
-	if pos.Side == SIDE_BUY {
-		a.Balance += pl
-		a.RealizedPl += pl
-	} else {
-		a.Balance -= pl
-		a.RealizedPl -= pl
-	}
+	a.Balance += pos.Value()                                         // Gain value of position
+	pl := float64(pos.Side) * pos.FloatUnits() * (price - pos.Price) // Gain delta
+	a.Balance += pl
+	a.RealizedPl += pl
 	a.Stats.AddTrade(pl)
-	Log(time.Now(), TAG_CLOSEPOSITION, "Position closed.")
 }
 
 func mergePositions(a *Account, from, to *OpenPosition) {
@@ -46,8 +40,9 @@ func mergePositions(a *Account, from, to *OpenPosition) {
 		a.Balance -= from.Value()
 		totalUnits := from.Units + to.Units
 		totalValue := from.Value() + to.Value()
-		avgPrice := totalValue - float64(totalUnits)
+		avgPrice := totalValue / float64(totalUnits)
 
+		log.Printf("Merge position: %f & %f => %f; %d => %d\n", to.Price, from.Price, avgPrice, to.Units, totalUnits)
 		to.Price = avgPrice
 		to.Units = totalUnits
 	} else {

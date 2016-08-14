@@ -41,47 +41,115 @@ func getStream(broker pb.BrokerClient) pb.Broker_StreamCandleClient {
 }
 
 func mine(def *invt.DefaultBroker) {
-	fmt.Println("Trader started")
+	log.Println("Trader started")
 	broker := def.GetClient()
 	stream := getStream(broker)
 
 	ema5 := ema.NewEma(ema.AlphaFromN(5))
 	ema30 := ema.NewEma(ema.AlphaFromN(30))
+	long := int32(0)
+	longAt := 0.
+	longAtTime := 0
+	short := int32(0)
+	shortAt := 0.
+	shortAtTime := 0
 	for {
 		c1, err := stream.Recv()
 		if err == io.EOF || c1 == nil {
-			fmt.Println("Candle stream has ended.")
+			log.Println("Candle stream has ended.")
 			return
 		}
 		c := invt.CandleFromProto(c1)
-		if ema5.Value < ema30.Value && ema5.ComputeNext(c.Close) > ema30.ComputeNext(c.Close) {
-			o := quickOrder(10, invt.SIDE_BUY_STR)
-			broker.CreateOrder(context.Background(), o)
-			err = session.Write("order.buy", o, c.Timestamp)
-		} else if ema5.Value > ema30.Value && ema5.ComputeNext(c.Close) < ema30.ComputeNext(c.Close) {
-			o := quickOrder(10, invt.SIDE_SELL_STR)
-			broker.CreateOrder(context.Background(), o)
-			err = session.Write("order.sell", o, c.Timestamp)
+		steps := ema5.Steps
+		ema5Diff := (ema5.ComputeNext(c.Close) - ema5.Value)
+		ema30Diff := (ema30.ComputeNext(c.Close) - ema30.Value)
+
+		if long > 0 && c.Close >= longAt+0.0020 {
+			o := quickOrder(long, invt.SIDE_SELL_STR)
+			resp, _ := broker.CreateOrder(context.Background(), o)
+			log.Println("Closed at", resp.Price, (resp.Price - longAt), resp.Time)
+			long = 0
+			longAt = 0
+			resp2, _ := broker.GetAccountInfo(context.Background(), &pb.AccountInfoReq{})
+			log.Println("PL: ", resp2.Info)
+		} else if long > 0 && c.Close >= longAt+0.0010 && steps-longAtTime >= 10 {
+			o := quickOrder(long, invt.SIDE_SELL_STR)
+			resp, _ := broker.CreateOrder(context.Background(), o)
+			log.Println("Closed (-) at", resp.Price, (resp.Price - longAt), resp.Time)
+			long = 0
+			longAt = 0
+			resp2, _ := broker.GetAccountInfo(context.Background(), &pb.AccountInfoReq{})
+			log.Println("PL: ", resp2.Info)
+		} else if long > 0 && (steps-longAtTime >= 60*5 || c.Close <= longAt) {
+			o := quickOrder(long, invt.SIDE_SELL_STR)
+			resp, _ := broker.CreateOrder(context.Background(), o)
+			log.Println("Closed (--) at", resp.Price, (resp.Price - longAt), resp.Time)
+			long = 0
+			longAt = 0
+			resp2, _ := broker.GetAccountInfo(context.Background(), &pb.AccountInfoReq{})
+			log.Println("PL: ", resp2.Info)
+		} else if short > 0 && c.Close <= shortAt-0.0020 {
+			o := quickOrder(short, invt.SIDE_BUY_STR)
+			resp, _ := broker.CreateOrder(context.Background(), o)
+			log.Println("Closed at", resp.Price, (shortAt - resp.Price), resp.Time)
+			short = 0
+			shortAt = 0
+			resp2, _ := broker.GetAccountInfo(context.Background(), &pb.AccountInfoReq{})
+			log.Println("PL: ", resp2.Info)
+		} else if short > 0 && c.Close <= shortAt-0.0010 && steps-shortAtTime >= 10 {
+			o := quickOrder(short, invt.SIDE_BUY_STR)
+			resp, _ := broker.CreateOrder(context.Background(), o)
+			log.Println("Closed (-) at", resp.Price, -(resp.Price - shortAt), resp.Time)
+			short = 0
+			shortAt = 0
+			resp2, _ := broker.GetAccountInfo(context.Background(), &pb.AccountInfoReq{})
+			log.Println("PL: ", resp2.Info)
+		} else if short > 0 && (steps-shortAtTime >= 60*5 || c.Close >= shortAt) {
+			o := quickOrder(short, invt.SIDE_BUY_STR)
+			resp, _ := broker.CreateOrder(context.Background(), o)
+			log.Println("Closed (--) at", resp.Price, -(resp.Price - shortAt), resp.Time)
+			short = 0
+			shortAt = 0
+			resp2, _ := broker.GetAccountInfo(context.Background(), &pb.AccountInfoReq{})
+			log.Println("PL: ", resp2.Info)
+		} else if ema5Diff > 0.0005 && ema30Diff < 0.0002 && short == 0 {
+			o := quickOrder(1000, invt.SIDE_BUY_STR)
+			resp, _ := broker.CreateOrder(context.Background(), o)
+			log.Println("Went long at", resp.Price)
+			if longAt == 0 {
+				longAt = resp.Price
+			}
+			long += 1000
+			longAtTime = steps
+		} else if ema5Diff < -0.0005 && ema30Diff > -0.0002 && long == 0 {
+			o := quickOrder(1000, invt.SIDE_SELL_STR)
+			resp, _ := broker.CreateOrder(context.Background(), o)
+			log.Println("Went short at", resp.Price)
+			if shortAt == 0 {
+				shortAt = resp.Price
+			}
+			short += 1000
+			shortAtTime = steps
 		}
-		if err != nil {
-			log.Fatal("Error writing to influxdb:", err)
+
+		if ema5.Steps%500 == 0 {
+			log.Println("Still going...", ema5.Steps)
 		}
+
 		ema5.Step(c.Close)
 		ema30.Step(c.Close)
-		session.Write("candle", c, c.Timestamp)
-		session.Write("ema.5", ema5, c.Timestamp)
-		session.Write("ema.30", ema30, c.Timestamp)
 	}
 }
 
 func main() {
+	log.SetOutput(os.Stdout)
 	session = ix_session.NewSession(ix_session.DEFAULT_ADDRESS, "investment", "password", "testdb")
 	datafile := "examples/data/largish.csv"
 	if len(os.Args) >= 2 {
 		datafile = os.Args[1]
 	}
 
-	simulator := invt.NewSimulator(invt.DATAFORMAT_CANDLE, datafile, 10)
+	simulator := invt.NewSimulator(invt.DATAFORMAT_CANDLE, datafile, 0)
 	broker := invt.NewDefaultBroker(1027)
 	go simulator.SimulateDataStream(broker)
 
