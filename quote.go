@@ -78,7 +78,7 @@ func (q *Quote) Price(side string) float64 {
 	return q.Bid
 }
 
-func parseCandle(record []string) *Candle {
+func ParseCandleFromRecord(instrumentId string, record []string) *Candle {
 	c := &Candle{}
 	v1, err1 := strconv.ParseFloat(record[2], 64)
 	v2, err2 := strconv.ParseFloat(record[3], 64)
@@ -89,7 +89,7 @@ func parseCandle(record []string) *Candle {
 		return nil
 	}
 
-	c.InstrumentId = "EURUSD"
+	c.InstrumentId = instrumentId
 	c.Timestamp, _ = utils.ParseDate(record)
 	c.Open = v1
 	c.High = v2
@@ -98,7 +98,7 @@ func parseCandle(record []string) *Candle {
 	return c
 }
 
-func parseQuote(instrumentId string, record []string) *Quote {
+func ParseQuoteFromRecord(instrumentId string, record []string) *Quote {
 	q := &Quote{}
 	q.InstrumentId = instrumentId
 	v, err := strconv.ParseFloat(record[2], 64)

@@ -155,11 +155,11 @@ func (b *DefaultBroker) GetOrders(context.Context, *pb.OrderListReq) (*pb.OrderL
 
 func (b *DefaultBroker) OnData(record []string, format DataFormat) {
 	if format == DATAFORMAT_QUOTE {
-		q := parseQuote(ONLY_INSTRUMENTID, record)
+		q := ParseQuoteFromRecord(ONLY_INSTRUMENTID, record)
 		b.lastquote = q
 		b.quoteBc.Emit(q)
 	} else if format == DATAFORMAT_CANDLE {
-		c := parseCandle(record)
+		c := ParseCandleFromRecord(ONLY_INSTRUMENTID, record)
 		b.lastCandle = c
 		b.lastquote = &Quote{}
 		b.lastquote.Bid = c.Close
