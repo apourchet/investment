@@ -165,6 +165,7 @@ func (b *DefaultBroker) OnData(record []string, format DataFormat) {
 		b.lastquote.Bid = c.Close
 		b.lastquote.Ask = c.Close + 0.00025
 		b.lastquote.InstrumentId = c.InstrumentId
+		b.lastquote.Timestamp = c.Timestamp
 		b.candleBc.Emit(c)
 	}
 }

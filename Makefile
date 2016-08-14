@@ -7,7 +7,8 @@ protos:
 	 $(PROTOC_LOCATION) --go_out=plugins=grpc:. protos/*.proto
 
 clean:
-	rm logs/*
+	rm logs/*; \
+	echo "drop measurement moment" | influx --database testdb
 
 
 .PHONY: protos
