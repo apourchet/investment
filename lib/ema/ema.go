@@ -2,8 +2,8 @@ package ema
 
 type Ema struct {
 	Alpha float64
-	Value float64
 	Steps int
+	value float64
 }
 
 func NewEma(alpha float64) *Ema {
@@ -17,17 +17,21 @@ func AlphaFromN(N int) float64 {
 
 func (e *Ema) Step(val float64) float64 {
 	if e.Steps == 0 {
-		e.Value = val
+		e.value = val
 	} else {
-		e.Value = val*e.Alpha + e.Value*(1-e.Alpha)
+		e.value = val*e.Alpha + e.value*(1-e.Alpha)
 	}
 	e.Steps += 1
-	return e.Value
+	return e.value
+}
+
+func (e *Ema) Compute() float64 {
+	return e.value
 }
 
 func (e *Ema) ComputeNext(val float64) float64 {
 	if e.Steps == 0 {
 		return val
 	}
-	return val*e.Alpha + e.Value*(1-e.Alpha)
+	return val*e.Alpha + e.value*(1-e.Alpha)
 }

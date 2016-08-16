@@ -48,8 +48,8 @@ func (t *Trader) Start() error {
 		pt.Bid = q.Bid
 
 		steps := ema5.Steps
-		ema5Diff := (ema5.ComputeNext(q.Bid) - ema5.Value)
-		ema30Diff := (ema30.ComputeNext(q.Bid) - ema30.Value)
+		ema5Diff := (ema5.ComputeNext(q.Bid) - ema5.Compute())
+		ema30Diff := (ema30.ComputeNext(q.Bid) - ema30.Compute())
 		sold := false
 		bought := false
 		if long > 0 && q.Bid >= longAt+0.0020 {
@@ -107,8 +107,8 @@ func (t *Trader) Start() error {
 
 		ema5.Step(q.Bid)
 		ema30.Step(q.Bid)
-		pt.Ema5 = ema5.Value
-		pt.Ema30 = ema30.Value
+		pt.Ema5 = ema5.Compute()
+		pt.Ema30 = ema30.Compute()
 		db.Write("moment", pt, q.Timestamp)
 	}
 	return nil
