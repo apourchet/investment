@@ -11,6 +11,7 @@ const EPSILON = 0.000001
 
 func assertDoubleEqual(t *testing.T, a, b float64) {
 	if math.Abs(a-b) > EPSILON {
+		t.Logf("%f != %f", a, b)
 		t.Fail()
 	}
 }
@@ -115,4 +116,31 @@ func TestFlipShort(t *testing.T) {
 	Buy(a, "", 20, 2)
 	checkBalance(t, a, 10)
 	checkRealizedPl(t, a, 30)
+}
+
+func TestExtendClose(t *testing.T) {
+	a := NewAccount(0)
+
+	Buy(a, "", 10, 1)
+	Buy(a, "", 10, 2) // 20 units @ 1.5
+	Sell(a, "", 10, 1)
+	Sell(a, "", 10, 2)
+	checkBalance(t, a, 0)
+
+	Sell(a, "", 10, 1)
+	Sell(a, "", 10, 2)
+	Buy(a, "", 10, 1)
+	Buy(a, "", 10, 2) // 20 units @ 1.5
+	checkBalance(t, a, 0)
+
+	Buy(a, "", 10, 1)
+	Buy(a, "", 20, 2) // 30 units @ 5/3
+	assertDoubleEqual(t, a.OpenPositions[""].Value(), 50.)
+	Sell(a, "", 10, 1)
+	assertDoubleEqual(t, a.OpenPositions[""].Value(), 20.*5./3.)
+	Sell(a, "", 20, 1)
+	if a.OpenPositions[""] != nil {
+		t.Fail()
+	}
+	checkBalance(t, a, -20.)
 }
