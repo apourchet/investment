@@ -15,12 +15,11 @@ func (l *Lma) Step(val float64) float64 {
 		for i := 0; i < l.N; i++ {
 			l.values[i] = val
 		}
-		l.Steps += 1
-		return val
 	}
 
 	l.rotate()
 	l.values[0] = val
+	l.Steps += 1
 	return l.Compute()
 }
 
