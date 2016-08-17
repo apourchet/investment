@@ -61,8 +61,8 @@ func mine(def *invt.DefaultBroker) {
 		}
 		c := invt.CandleFromProto(c1)
 		steps := ema5.Steps
-		ema5Diff := (ema5.ComputeNext(c.Close) - ema5.Value)
-		ema30Diff := (ema30.ComputeNext(c.Close) - ema30.Value)
+		ema5Diff := (ema5.ComputeNext(c.Close) - ema5.Compute())
+		ema30Diff := (ema30.ComputeNext(c.Close) - ema30.Compute())
 
 		if long > 0 && c.Close >= longAt+0.0020 {
 			o := quickOrder(long, invt.SIDE_SELL_STR)
