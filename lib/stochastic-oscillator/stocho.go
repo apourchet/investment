@@ -24,6 +24,9 @@ func (so *StochasticOscillator) Step(val float64) float64 {
 		}
 	}
 	so.Steps += 1
+	so.rotate()
+	so.values[0] = val
+
 	l := so.Low()
 	h := so.High()
 	k := (val - l) / (h - l)
