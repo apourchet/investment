@@ -18,6 +18,19 @@ type Candle struct {
 	Close        float64
 }
 
+type OandaCandle struct {
+	InstrumentId string
+	Timestamp    time.Time
+	OpenBid      float64
+	OpenAsk      float64
+	HighBid      float64
+	LowBid       float64
+	HighAsk      float64
+	LowAsk       float64
+	CloseBid     float64
+	CloseAsk     float64
+}
+
 type Quote struct {
 	InstrumentId string
 	Timestamp    time.Time
@@ -96,6 +109,23 @@ func ParseCandleFromRecord(instrumentId string, record []string) *Candle {
 	c.Low = v3
 	c.Close = v4
 	return c
+}
+
+func ParseQuoteFromOandaRecord(instrumentId string, record []string) *Quote {
+	q := &Quote{}
+	q.InstrumentId = instrumentId
+	v, err := strconv.ParseFloat(record[2], 64)
+	q.Bid = v
+	if err != nil {
+		return nil
+	}
+	v, err = strconv.ParseFloat(record[3], 64)
+	q.Ask = v
+	if err != nil {
+		return nil
+	}
+	q.Timestamp, _ = utils.ParseDate(record)
+	return q
 }
 
 func ParseQuoteFromRecord(instrumentId string, record []string) *Quote {
