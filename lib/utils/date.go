@@ -32,3 +32,11 @@ func ParseDateString(s []string) (string, error) {
 	}
 	return t.String(), nil
 }
+
+func IsWeekday(date time.Time) bool {
+	d := date.Weekday()
+	if d == 6 || d == 0 {
+		return false
+	}
+	return true
+}
