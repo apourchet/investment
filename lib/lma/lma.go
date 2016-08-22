@@ -1,13 +1,19 @@
 package lma
 
+import "github.com/apourchet/investment/lib/sliding-window"
+
 type Lma struct {
 	N      int
 	Steps  int
-	values []float64
+	values slidwin.SlidingWindow
 }
 
 func NewLma(n int) *Lma {
-	return &Lma{n, 0, make([]float64, n)}
+	return &Lma{
+		N:      n,
+		Steps:  0,
+		values: slidwin.NewSlidingWindow(n),
+	}
 }
 
 func (l *Lma) Step(val float64) float64 {
@@ -15,10 +21,10 @@ func (l *Lma) Step(val float64) float64 {
 		for i := 0; i < l.N; i++ {
 			l.values[i] = val
 		}
+		l.Steps += 1
+		return l.Compute()
 	}
-
-	l.rotate()
-	l.values[0] = val
+	l.values.Push(val)
 	l.Steps += 1
 	return l.Compute()
 }
@@ -26,15 +32,9 @@ func (l *Lma) Step(val float64) float64 {
 func (l *Lma) Compute() float64 {
 	s := 0.
 	for i, f := range l.values {
-		s += f * float64(l.N-i)
+		s += f.(float64) * float64(l.N-i)
 	}
 	return s / float64(sum(l.N))
-}
-
-func (l *Lma) rotate() {
-	for i := l.N - 1; i > 0; i-- {
-		l.values[i] = l.values[i-1]
-	}
 }
 
 func sum(n int) int {
