@@ -1,5 +1,7 @@
 package candelizer
 
+import "github.com/apourchet/investment/lib/sliding-window"
+
 type CandleInterface interface {
 	Open() float64
 	Close() float64
@@ -8,12 +10,12 @@ type CandleInterface interface {
 }
 
 type Candelizer struct {
-	values []float64
+	values slidwin.SlidingWindow
 	Steps  int
 }
 
 func NewCandelizer(n int) *Candelizer {
-	return &Candelizer{make([]float64, n), 0}
+	return &Candelizer{slidwin.NewSlidingWindow(n), 0}
 }
 
 func (c *Candelizer) Step(val float64) CandleInterface {
@@ -23,23 +25,23 @@ func (c *Candelizer) Step(val float64) CandleInterface {
 		}
 	}
 	c.Steps += 1
-	c.rotate()
-	c.values[0] = val
+	c.values.Push(val)
 	return c
 }
 
 func (c *Candelizer) Open() float64 {
-	return c.values[len(c.values)-1]
+	return c.values[len(c.values)-1].(float64)
 }
 
 func (c *Candelizer) Close() float64 {
-	return c.values[0]
+	return c.values[0].(float64)
 }
 
 // O(n) for getting minimum since we are using a ring
 func (c *Candelizer) Low() float64 {
-	min := c.values[0]
-	for _, f := range c.values {
+	min := c.values[0].(float64)
+	for _, x := range c.values {
+		f := x.(float64)
 		if min > f {
 			min = f
 		}
@@ -49,8 +51,9 @@ func (c *Candelizer) Low() float64 {
 
 // O(n) for getting maximum since we are using a ring
 func (c *Candelizer) High() float64 {
-	max := c.values[0]
-	for _, f := range c.values {
+	max := c.values[0].(float64)
+	for _, x := range c.values {
+		f := x.(float64)
 		if max < f {
 			max = f
 		}
