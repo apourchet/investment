@@ -52,7 +52,7 @@ func (tm *TradingManager) OnQuote(q *Quote) {
 		pos, ok := tm.account.OpenPositions[iid]
 		if ok {
 			nowPrice := q.Price(StringOfSide(pos.Side))
-			if sign(tpsl.price-tpsl.originalPrice) == sign(nowPrice-tpsl.price) {
+			if sign(tpsl.price-tpsl.originalPrice) == sign(nowPrice-tpsl.price) || tpsl.price == nowPrice {
 				tm.ClosePosition(iid, nowPrice)
 			}
 		}
@@ -81,6 +81,10 @@ func (tm *TradingManager) ClosePosition(instrumentId string, price float64) {
 	tm.account.RealizedPl += pl
 	tm.account.Stats.AddTrade(pl)
 	delete(tm.account.OpenPositions, instrumentId)
+}
+
+func (tm *TradingManager) CancelTPSL(instrumentId string) {
+	delete(tm.tpslOrders, instrumentId)
 }
 
 func sign(f float64) int {
