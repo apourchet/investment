@@ -99,12 +99,15 @@ def fmtCandle(candle):
     t = int(candle['time'][:-6]) # handle us timestamp
     date = datetime.datetime.fromtimestamp(t).strftime('%Y.%m.%d,%H:%M')
     # TODO handle all fields from oanda candle
-    return '%s,%s,%s,%s,%s,%s,%s\n' % (date,
+    return '%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (date,
                             candle['openBid'],
                             candle['openAsk'],
-                            candle['lowBid'],
                             candle['highBid'],
+                            candle['highAsk'],
+                            candle['lowBid'],
+                            candle['lowAsk'],
                             candle['closeBid'],
+                            candle['closeAsk'],
                             candle['volume'])
 
 
@@ -125,21 +128,23 @@ def main():
     parser.add_argument('--outfile', required=False, help='file to write data to')
 
     args = parser.parse_args()
+    outfile = args.outfile or DEFAULT_FILE
+    print "Outputting data in %s" % outfile
 
     if args.granularity in TOO_LOW:
         raise 'We cant go that low in granularity m8'
 
     if args.month:
         if args.granularity in LOW_GRAN:
-            WriteGranularMonth(args.month, args.year, args.granularity, DEFAULT_FILE)
+            WriteGranularMonth(args.month, args.year, args.granularity, outfile)
         else:
-            WriteMonthOfData(args.month, args.year, args.granularity, DEFAULT_FILE)
+            WriteMonthOfData(args.month, args.year, args.granularity, outfile)
     else:
         if args.granularity in LOW_GRAN:
             print 'it will take like 10 minutes to get a year of granular data'
             print 'im still going to get that data but you should know it will take long af'
-            WriteGranularYear(args.year, args.granularity, DEFAULT_FILE)
+            WriteGranularYear(args.year, args.granularity, outfile)
         else:
-            WriteYearOfData(args.year, args.granularity, DEFAULT_FILE)
+            WriteYearOfData(args.year, args.granularity, outfile)
 
 main()

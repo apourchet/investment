@@ -111,6 +111,35 @@ func ParseCandleFromRecord(instrumentId string, record []string) *Candle {
 	return c
 }
 
+// TODO Add volume information to candle?
+func ParseCandleFromOandaRecord(instrumentId string, record []string) *OandaCandle {
+	c := &OandaCandle{}
+	v1, err1 := strconv.ParseFloat(record[2], 64)
+	v2, err2 := strconv.ParseFloat(record[3], 64)
+	v3, err3 := strconv.ParseFloat(record[4], 64)
+	v4, err4 := strconv.ParseFloat(record[5], 64)
+	v5, err3 := strconv.ParseFloat(record[6], 64)
+	v6, err4 := strconv.ParseFloat(record[7], 64)
+	v7, err3 := strconv.ParseFloat(record[8], 64)
+	v8, err4 := strconv.ParseFloat(record[9], 64)
+
+	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
+		return nil
+	}
+
+	c.InstrumentId = instrumentId
+	c.Timestamp, _ = utils.ParseDate(record)
+	c.OpenBid = v1
+	c.OpenAsk = v2
+	c.HighBid = v3
+	c.HighAsk = v4
+	c.LowBid = v5
+	c.LowAsk = v6
+	c.CloseBid = v7
+	c.CloseAsk = v8
+	return c
+}
+
 func ParseQuoteFromOandaRecord(instrumentId string, record []string) *Quote {
 	q := &Quote{}
 	q.InstrumentId = instrumentId
