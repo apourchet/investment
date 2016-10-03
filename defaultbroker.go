@@ -57,6 +57,10 @@ func (b *DefaultBroker) Start() error {
 	return err
 }
 
+func (b *DefaultBroker) CloseTrade(ctx context.Context, in *pb.CloseTradeReq) (*pb.CloseTradeResp, error) {
+	return nil, nil
+}
+
 func (b *DefaultBroker) StreamPrices(req *pb.StreamPricesReq, stream pb.Broker_StreamPricesServer) error {
 	if req.InstrumentId != ONLY_INSTRUMENTID {
 		return fmt.Errorf("Unsupported InstrumentID. Only support " + "EURUSD")

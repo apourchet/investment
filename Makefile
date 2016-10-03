@@ -10,5 +10,8 @@ clean:
 	rm logs/*; \
 	echo "drop measurement moment" | influx --database testdb
 
+test:
+	go test ./...
+
 
 .PHONY: protos

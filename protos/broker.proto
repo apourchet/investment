@@ -23,13 +23,16 @@ service Broker {
 
     rpc CreateOrder(OrderCreationReq) returns (OrderCreationResp) {}
 
+    rpc CloseTrade(CloseTradeReq) returns (CloseTradeResp) {}
+
     // TODO http://developer.oanda.com/rest-live/orders/#modifyExistingOrder
 
     // TODO http://developer.oanda.com/rest-live/orders/#closeOrder
+
+    // TODO http://developer.oanda.com/rest-live/trades/#modifyTrade
 }
 
 message InstrumentListReq {
-    AuthToken token = 1;
     string accountId = 2;
 }
 
@@ -38,7 +41,6 @@ message InstrumentListResp {
 }
 
 message PriceListReq {
-    AuthToken token = 1;
     repeated string instrumentId = 2;
 }
 
@@ -47,7 +49,6 @@ message PriceListResp {
 }
 
 message LastCandleReq {
-    AuthToken token = 1;
     string instrumentId = 2;
 }
 
@@ -56,25 +57,20 @@ message LastCandleResp {
 }
 
 message StreamPricesReq {
-    AuthToken token = 1;
     string instrumentId = 2;
 }
 
 message StreamCandleReq {
-    AuthToken token = 1;
     string instrumentId = 2;
 }
 
-message AccountListReq {
-    AuthToken token = 1;
-}
+message AccountListReq {}
 
 message AccountListResp {
     repeated Account accounts = 1;
 }
 
 message AccountInfoReq {
-    AuthToken token = 1;
     string accountId = 2;
 }
 
@@ -83,7 +79,6 @@ message AccountInfoResp {
 }
 
 message OrderListReq {
-    AuthToken token = 1;
     string accountId = 2;
 }
 
@@ -91,8 +86,20 @@ message OrderListResp {
     repeated Order orders = 1;
 }
 
+message CloseTradeReq {
+    string id = 1;
+}
+
+message CloseTradeResp {
+    string id = 1;
+    double price = 2;
+    string instrumentId = 3;
+    string time = 4;
+    double profit = 5;
+    string side = 6;
+}
+
 message OrderCreationReq {
-    AuthToken token = 1;
     string instrumentId = 2;
     int32 units = 3;
     string side = 4;
@@ -125,10 +132,6 @@ message Candle {
 }
 
 message Empty { }
-
-message AuthToken {
-    string value = 1;
-}
 
 message Instrument {
     string instrumentId = 1;
